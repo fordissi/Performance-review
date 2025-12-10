@@ -5,12 +5,10 @@ import { generateFeedback } from './services/geminiService';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { calculateRaw, calculateGrade, calculateStdDev, calculateMean } from './utils.ts';
 
+import { api } from './services/api';
+
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'];
 const YEARS = [2022, 2023, 2024, 2025, 2026];
-const API_BASE = `http://${window.location.hostname}:3001`;
-const API_URL = `${API_BASE}/api/evaluations`;
-const API_USERS = `${API_BASE}/api/users`;
-const API_EMPLOYEES = `${API_BASE}/api/employees`;
 
 interface SystemSettings {
   activeYear: number;
@@ -618,9 +616,18 @@ const App = () => {
 
     // Load Data
     useEffect(() => {
-        fetch(API_USERS).then(r=>r.json()).then(d=>setUsers(d)).catch(e=>console.error('Users load failed',e));
-        fetch(API_EMPLOYEES).then(r=>r.json()).then(d=>setEmployees(d)).catch(e=>console.error('Emps load failed',e));
-        fetch(API_URL).then(r=>r.json()).then(d=>{ if(Array.isArray(d)) setEvaluations(d); }).catch(e=>console.error('Evals load failed',e));
+        const loadJava = async () => {
+             try {
+                 const [u, e, ev] = await Promise.all([api.getUsers(), api.getEmployees(), api.getEvaluations()]);
+                 setUsers(u);
+                 setEmployees(e);
+                 // Fix: Ensure evaluations is always an array
+                 if(Array.isArray(ev)) setEvaluations(ev); else setEvaluations([]);
+             } catch (err) {
+                 console.error("Failed to load data", err);
+             }
+        };
+        loadJava();
     }, []);
 
     const handleLogin = (found: User) => {
@@ -640,25 +647,25 @@ const App = () => {
         setCurrentView('dashboard');
     };
 
-    const handleSaveEvals = (updatedEval: Evaluation) => {
+    const handleSaveEvals = async (updatedEval: Evaluation) => {
         const newEvals = [...evaluations.filter(e => !(e.employeeId === updatedEval.employeeId && e.year === updatedEval.year && e.term === updatedEval.term)), updatedEval];
         setEvaluations(newEvals);
-        fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(newEvals) });
+        await api.saveEvaluations(newEvals);
     };
 
-    const handleBatchSaveEvals = (updatedEvals: Evaluation[]) => {
+    const handleBatchSaveEvals = async (updatedEvals: Evaluation[]) => {
        let merged = [...evaluations];
        updatedEvals.forEach(u => {
            merged = merged.filter(e => !(e.employeeId === u.employeeId && e.year === u.year && e.term === u.term));
            merged.push(u);
        });
        setEvaluations(merged);
-       fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(merged) });
+       await api.saveEvaluations(merged);
     };
 
     const handleUpdateSettings = (s: SystemSettings) => setSettings(s);
-    const handleSaveUsers = (newUsers: User[]) => { setUsers(newUsers); fetch(API_USERS, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(newUsers) }); };
-    const handleSaveEmployees = (newEmps: Employee[]) => { setEmployees(newEmps); fetch(API_EMPLOYEES, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(newEmps) }); };
+    const handleSaveUsers = async (newUsers: User[]) => { setUsers(newUsers); await api.saveUsers(newUsers); };
+    const handleSaveEmployees = async (newEmps: Employee[]) => { setEmployees(newEmps); await api.saveEmployees(newEmps); };
 
     const handleChangePassword = (oldP: string, newP: string) => {
         if (!user) return;
