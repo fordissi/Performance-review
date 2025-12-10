@@ -62,5 +62,13 @@
     "name": "Ivy Lin",
     "role": "EMPLOYEE",
     "avatar": "https://i.pravatar.cc/150?u=emp5"
+  },
+  {
+    "id": "E403",
+    "username": "e403",
+    "password": "password",
+    "name": "TEST",
+    "role": "EMPLOYEE",
+    "avatar": "https://i.pravatar.cc/150?u=E403"
   }
 ]
