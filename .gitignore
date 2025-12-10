@@ -26,5 +26,6 @@ dist-ssr
 # Security
 .env
 .env.*
+!.env.example
 data/*.json
 !data/*.sample.json
