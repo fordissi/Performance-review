@@ -97,6 +97,26 @@ const LoginView = ({ onLogin, users }: { onLogin: (u: User) => void, users: User
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md">
                 <div className="flex flex-col items-center mb-6"><div className="bg-indigo-600 p-3 rounded-xl mb-4"><TrendingUp className="text-white" size={32} /></div><h1 className="text-2xl font-bold text-slate-800">PerformX</h1></div>
                 <form onSubmit={handleLogin} className="space-y-4"><input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-3 border rounded-lg" placeholder="Username" /><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 border rounded-lg" placeholder="Password" />{error && <p className="text-red-500 text-sm">{error}</p>}<button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">登入</button></form>
+                
+                {import.meta.env.VITE_USE_MOCK === 'true' && (
+                    <div className="mt-6 pt-6 border-t border-slate-200 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="flex items-center gap-2 mb-3 text-sm font-bold text-slate-500"><AlertCircle size={14}/> Demo Mode Credentials</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                            <button onClick={()=>{setUsername('gm');setPassword('password')}} className="p-2 bg-slate-50 rounded hover:bg-indigo-50 hover:text-indigo-600 text-left transition-colors">
+                                <span className="font-bold block">General Manager</span>gm / password
+                            </button>
+                            <button onClick={()=>{setUsername('admin');setPassword('password')}} className="p-2 bg-slate-50 rounded hover:bg-indigo-50 hover:text-indigo-600 text-left transition-colors">
+                                <span className="font-bold block">HR Admin</span>admin / password
+                            </button>
+                            <button onClick={()=>{setUsername('manager1');setPassword('password')}} className="p-2 bg-slate-50 rounded hover:bg-indigo-50 hover:text-indigo-600 text-left transition-colors">
+                                <span className="font-bold block">Manager</span>manager1 / password
+                            </button>
+                            <button onClick={()=>{setUsername('emp1');setPassword('password')}} className="p-2 bg-slate-50 rounded hover:bg-indigo-50 hover:text-indigo-600 text-left transition-colors">
+                                <span className="font-bold block">Employee</span>emp1 / password
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
