@@ -51,6 +51,6 @@ app.post('/api/users', (req, res) => handlePost(USERS_FILE, req, res));
 app.get('/api/employees', (req, res) => handleGet(EMPLOYEES_FILE, res));
 app.post('/api/employees', (req, res) => handlePost(EMPLOYEES_FILE, req, res));
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

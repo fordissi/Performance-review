@@ -7,9 +7,10 @@ import { calculateRaw, calculateGrade, calculateStdDev, calculateMean } from './
 
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'];
 const YEARS = [2022, 2023, 2024, 2025, 2026];
-const API_URL = 'http://localhost:3001/api/evaluations';
-const API_USERS = 'http://localhost:3001/api/users';
-const API_EMPLOYEES = 'http://localhost:3001/api/employees';
+const API_BASE = `http://${window.location.hostname}:3001`;
+const API_URL = `${API_BASE}/api/evaluations`;
+const API_USERS = `${API_BASE}/api/users`;
+const API_EMPLOYEES = `${API_BASE}/api/employees`;
 
 interface SystemSettings {
   activeYear: number;
