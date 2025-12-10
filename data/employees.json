@@ -1,0 +1,191 @@
+[
+  {
+    "id": "M001",
+    "name": "Alice Chen",
+    "role": "Engineering Director",
+    "department": "Engineering",
+    "managerId": "U_GM",
+    "isManager": true,
+    "avatar": "https://i.pravatar.cc/150?u=alice"
+  },
+  {
+    "id": "M002",
+    "name": "Bob Wang",
+    "role": "Sales Director",
+    "department": "Sales",
+    "managerId": "U_GM",
+    "isManager": true,
+    "avatar": "https://i.pravatar.cc/150?u=bob"
+  },
+  {
+    "id": "M003",
+    "name": "Charlie Liu",
+    "role": "Marketing Lead",
+    "department": "Marketing",
+    "managerId": "U_GM",
+    "isManager": true,
+    "avatar": "https://i.pravatar.cc/150?u=charlie"
+  },
+  {
+    "id": "M004",
+    "name": "Diana Wu",
+    "role": "HR Manager",
+    "department": "Human Resources",
+    "managerId": "U_GM",
+    "isManager": true,
+    "avatar": "https://i.pravatar.cc/150?u=diana"
+  },
+  {
+    "id": "E001",
+    "name": "Eric Zhang",
+    "role": "Senior Backend Dev",
+    "department": "Engineering",
+    "managerId": "M001",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp1"
+  },
+  {
+    "id": "E002",
+    "name": "Frank Li",
+    "role": "Frontend Dev",
+    "department": "Engineering",
+    "managerId": "M001",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp2"
+  },
+  {
+    "id": "E003",
+    "name": "Grace Ho",
+    "role": "DevOps Engineer",
+    "department": "Engineering",
+    "managerId": "M001",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp3"
+  },
+  {
+    "id": "E004",
+    "name": "Henry Tsai",
+    "role": "QA Engineer",
+    "department": "Engineering",
+    "managerId": "M001",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp4"
+  },
+  {
+    "id": "E005",
+    "name": "Ivy Lin",
+    "role": "Sales Executive",
+    "department": "Sales",
+    "managerId": "M002",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp5"
+  },
+  {
+    "id": "E006",
+    "name": "Jack Chen",
+    "role": "Sales Executive",
+    "department": "Sales",
+    "managerId": "M002",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp6"
+  },
+  {
+    "id": "E007",
+    "name": "Kevin Wu",
+    "role": "Sales Assistant",
+    "department": "Sales",
+    "managerId": "M002",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp7"
+  },
+  {
+    "id": "E008",
+    "name": "Lily Chang",
+    "role": "Account Manager",
+    "department": "Sales",
+    "managerId": "M002",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp8"
+  },
+  {
+    "id": "E009",
+    "name": "Mike Yang",
+    "role": "Sales Intern",
+    "department": "Sales",
+    "managerId": "M002",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp9"
+  },
+  {
+    "id": "E010",
+    "name": "Nancy Kuo",
+    "role": "Content Creator",
+    "department": "Marketing",
+    "managerId": "M003",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp10"
+  },
+  {
+    "id": "E011",
+    "name": "Oscar Lim",
+    "role": "SEO Specialist",
+    "department": "Marketing",
+    "managerId": "M003",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp11"
+  },
+  {
+    "id": "E012",
+    "name": "Patty Su",
+    "role": "Designer",
+    "department": "Marketing",
+    "managerId": "M003",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp12"
+  },
+  {
+    "id": "E013",
+    "name": "Queenie Lo",
+    "role": "Recruiter",
+    "department": "Human Resources",
+    "managerId": "M004",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp13"
+  },
+  {
+    "id": "E014",
+    "name": "Ricky Tan",
+    "role": "Admin Assistant",
+    "department": "Human Resources",
+    "managerId": "M004",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp14"
+  },
+  {
+    "id": "E015",
+    "name": "Sarah Lee",
+    "role": "Payroll Specialist",
+    "department": "Human Resources",
+    "managerId": "M004",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp15"
+  },
+  {
+    "id": "E016",
+    "name": "Tom Hsu",
+    "role": "Junior Dev",
+    "department": "Engineering",
+    "managerId": "M001",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp16"
+  },
+  {
+    "id": "E017",
+    "name": "Uma Wang",
+    "role": "Frontend Dev",
+    "department": "Engineering",
+    "managerId": "M001",
+    "isManager": false,
+    "avatar": "https://i.pravatar.cc/150?u=emp17"
+  }
+]

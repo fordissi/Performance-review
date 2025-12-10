@@ -1,0 +1,66 @@
+[
+  {
+    "id": "U_ADMIN",
+    "username": "admin",
+    "password": "password",
+    "name": "HR Admin",
+    "role": "HR",
+    "avatar": "https://i.pravatar.cc/150?u=admin"
+  },
+  {
+    "id": "U_GM",
+    "username": "gm",
+    "password": "password",
+    "name": "David GM",
+    "role": "GM",
+    "avatar": "https://i.pravatar.cc/150?u=gm"
+  },
+  {
+    "id": "M001",
+    "username": "manager1",
+    "password": "password",
+    "name": "Alice Chen",
+    "role": "MANAGER",
+    "avatar": "https://i.pravatar.cc/150?u=alice"
+  },
+  {
+    "id": "M002",
+    "username": "manager2",
+    "password": "password",
+    "name": "Bob Wang",
+    "role": "MANAGER",
+    "avatar": "https://i.pravatar.cc/150?u=bob"
+  },
+  {
+    "id": "M003",
+    "username": "manager3",
+    "password": "password",
+    "name": "Charlie Liu",
+    "role": "MANAGER",
+    "avatar": "https://i.pravatar.cc/150?u=charlie"
+  },
+  {
+    "id": "M004",
+    "username": "manager4",
+    "password": "password",
+    "name": "Diana Wu",
+    "role": "MANAGER",
+    "avatar": "https://i.pravatar.cc/150?u=diana"
+  },
+  {
+    "id": "E001",
+    "username": "emp1",
+    "password": "password",
+    "name": "Eric Zhang",
+    "role": "EMPLOYEE",
+    "avatar": "https://i.pravatar.cc/150?u=emp1"
+  },
+  {
+    "id": "E005",
+    "username": "emp5",
+    "password": "password",
+    "name": "Ivy Lin",
+    "role": "EMPLOYEE",
+    "avatar": "https://i.pravatar.cc/150?u=emp5"
+  }
+]
