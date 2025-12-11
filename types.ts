@@ -10,6 +10,10 @@ export enum Department {
   SALES = 'Sales',
   MARKETING = 'Marketing',
   HR = 'Human Resources',
+  FINANCIAL_ACCOUNTING = 'Financial Accounting',
+  ADMINISTRATION = 'Administrative Support',
+  LOGISTICS = 'Logistics',
+  PHARMACY = 'Pharmacy',
   MANAGEMENT = 'Management' // For GM
 }
 
@@ -80,7 +84,11 @@ export const DEPT_TYPE = {
     [Department.MARKETING]: 'SALES',
     [Department.ENGINEERING]: 'ADMIN',
     [Department.HR]: 'ADMIN',
-    [Department.MANAGEMENT]: 'ADMIN'
+    [Department.MANAGEMENT]: 'ADMIN',
+    [Department.FINANCIAL_ACCOUNTING]: 'ADMIN',
+    [Department.ADMINISTRATION]: 'ADMIN',
+    [Department.LOGISTICS]: 'ADMIN',
+    [Department.PHARMACY]: 'ADMIN'
 };
 
 export const TERMS = ['Yearly', 'Half-Yearly', 'Q1', 'Q2', 'Q3', 'Q4', 'Probation', 'PIP'] as const;

@@ -8,7 +8,8 @@ import { calculateRaw, calculateGrade, calculateStdDev, calculateMean } from './
 import { api } from './services/api';
 
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'];
-const YEARS = [2022, 2023, 2024, 2025, 2026];
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 6 }, (_, i) => currentYear - 2 + i); // e.g. [2023, 2024, 2025, 2026, 2027, 2028]
 
 interface SystemSettings {
   activeYear: number;
@@ -512,7 +513,8 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
                       {isGM ? 'GM 全局儀表板' : 'HR 管理平台'} 
                       <div className="flex bg-slate-100 rounded-lg p-1 ml-4 items-center">
                           <History size={16} className="text-slate-500 ml-2 mr-1"/>
-                          <select value={viewYear} onChange={e=>setViewYear(parseInt(e.target.value))} className="bg-transparent text-sm font-bold text-slate-700 py-1 cursor-pointer outline-none">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                          <input type="number" list="years-list" value={viewYear} onChange={e=>setViewYear(parseInt(e.target.value)||0)} className="bg-transparent text-sm font-bold text-slate-700 py-1 w-20 cursor-pointer outline-none border-b border-transparent hover:border-slate-300 transition-colors"/>
+                          <datalist id="years-list">{YEARS.map(y => <option key={y} value={y} />)}</datalist>
                           <span className="text-slate-300 mx-1">|</span>
                           <select value={viewTerm} onChange={e=>setViewTerm(e.target.value)} className="bg-transparent text-sm font-bold text-slate-700 py-1 pr-2 cursor-pointer outline-none">{TERMS.map(t => <option key={t} value={t}>{t}</option>)}</select>
                       </div>
@@ -559,7 +561,7 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
              {showSettings && (
                  <div className="bg-slate-800 text-white p-6 rounded-xl shadow-xl space-y-4 animate-in fade-in slide-in-from-top-4">
                      <div className="flex gap-4 items-end">
-                        <div><label>Active Year</label><select value={tempSettings.activeYear} onChange={e=>setTempSettings({...tempSettings, activeYear: parseInt(e.target.value)})} className="text-black block rounded p-1 w-24">{YEARS.map(y=><option key={y}>{y}</option>)}</select></div>
+                        <div><label>Active Year</label><input type="number" list="years-list" value={tempSettings.activeYear} onChange={e=>setTempSettings({...tempSettings, activeYear: parseInt(e.target.value)||0})} className="text-black block rounded p-1 w-24"/></div>
                         <div><label>Active Term</label><select value={tempSettings.activeTerm} onChange={e=>setTempSettings({...tempSettings, activeTerm: e.target.value})} className="text-black block rounded p-1 w-32">{TERMS.map(t=><option key={t}>{t}</option>)}</select></div>
                         <div className="flex-1"><label>Period Name (Display)</label><input className="text-black block rounded p-1 w-full" value={tempSettings.periodName} onChange={e=>setTempSettings({...tempSettings, periodName: e.target.value})}/></div>
                         <button onClick={() => { setShowCriteriaEditor(!showCriteriaEditor); if(!showCriteriaEditor) api.getCriteria().then(c=>setCriteriaJson(JSON.stringify(c,null,2))); }} className="bg-orange-600 px-4 py-1 rounded font-bold hover:bg-orange-700">
@@ -735,7 +737,8 @@ const EmployeeView = ({ user, employees, evaluations, settings }: any) => {
             <div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
                 <span className="font-bold text-slate-700 flex items-center gap-2"><History size={16}/> 考核期間</span>
                 <div className="flex gap-2">
-                    <select value={viewYear} onChange={e=>setViewYear(parseInt(e.target.value))} className="bg-slate-100 rounded p-1 text-sm font-bold outline-none">{YEARS.map(y=><option key={y} value={y}>{y}</option>)}</select>
+                    <input type="number" list="years-list" value={viewYear} onChange={e=>setViewYear(parseInt(e.target.value)||0)} className="bg-slate-100 rounded p-1 text-sm font-bold outline-none w-20"/>
+                    <datalist id="years-list">{YEARS.map(y => <option key={y} value={y} />)}</datalist>
                     <select value={viewTerm} onChange={e=>setViewTerm(e.target.value)} className="bg-slate-100 rounded p-1 text-sm font-bold outline-none">{TERMS.map(t=><option key={t} value={t}>{t}</option>)}</select>
                 </div>
             </div>
