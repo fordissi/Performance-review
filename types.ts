@@ -90,3 +90,23 @@ export const DEPT_TYPE = {
 
 export const TERMS = ['Yearly', 'Half-Yearly', 'Q1', 'Q2', 'Q3', 'Q4', 'Probation', 'PIP'] as const;
 export type AssessmentTerm = typeof TERMS[number];
+
+export interface AuditLog {
+    id: string;
+    timestamp: string;
+    userId: string;
+    userName: string;
+    action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN';
+    target: 'EMPLOYEE' | 'USER' | 'EVALUATION';
+    targetId: string;
+    details: string;
+}
+
+export interface Notification {
+    id: string;
+    timestamp: string;
+    toRole: Role[]; 
+    title: string;
+    message: string;
+    isRead: boolean;
+}

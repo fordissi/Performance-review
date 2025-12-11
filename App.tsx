@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, CheckCircle, BrainCircuit, TrendingUp, Shield, LogOut, FileText, History, Calendar, Settings, Save, Server, Edit, AlertTriangle, Menu, X, ChevronDown, ChevronUp, Calculator, BarChart3, Lock, Trophy, Activity, Clock, Plus, Trash2, Share2, ChevronLeft, ChevronRight, AlertCircle, Download } from 'lucide-react';
-import { Role, Employee, Evaluation, Department, User, DEPT_TYPE, TERMS, ScoreDetails, AssessmentTerm } from './types';
+import { Users, CheckCircle, BrainCircuit, TrendingUp, Shield, LogOut, FileText, History, Calendar, Settings, Save, Server, Edit, AlertTriangle, Menu, X, ChevronDown, ChevronUp, Calculator, BarChart3, Lock, Trophy, Activity, Clock, Plus, Trash2, Share2, ChevronLeft, ChevronRight, AlertCircle, Download, Bell } from 'lucide-react';
+import { Role, Employee, Evaluation, Department, User, DEPT_TYPE, TERMS, ScoreDetails, AssessmentTerm, AuditLog, Notification } from './types';
 import { generateFeedback } from './services/geminiService';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { calculateRaw, calculateGrade, calculateStdDev, calculateMean } from './utils.ts';
@@ -203,6 +203,8 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
     const handleScoreChange = (key: keyof ScoreDetails, val: number) => setScores(prev => ({ ...prev, [key]: val }));
     const handleSave = () => {
         if (!selectedEmployee) return;
+        if (currentEval && !confirm(`員工 ${selectedEmployee.name} 本期已有評分資料。確定要覆蓋嗎？`)) return;
+
         const raw = calculateRaw(scores);
         onSave({ 
             employeeId: selectedEmpId, managerId: user.id, year: settings.activeYear, term: settings.activeTerm,
@@ -211,6 +213,20 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
             totalScore: (currentEval?.zScoreAdjusted || raw) + (currentEval?.attendanceBonus || 0) + (currentEval?.overallAdjustment || 0) + (currentEval?.rewardsPunishments || 0),
             grade: '', feedback, isManagerComplete: true, isZScoreCalculated: currentEval?.isZScoreCalculated || false, isHRComplete: currentEval?.isHRComplete || false
         });
+        
+        // Log
+        api.addLog({
+            userId: user.id, userName: user.name, action: 'UPDATE', target: 'EVALUATION', targetId: selectedEmpId, 
+            details: `Manager ${user.name} submitted evaluation for ${selectedEmployee.name} (${settings.activeYear} ${settings.activeTerm})`
+        });
+
+        // Notify Admin
+        api.addNotification({
+            toRole: [Role.HR, Role.GM],
+            title: '考核更新',
+            message: `${user.name} 更新了 ${selectedEmployee.name} 的考核資料，請確認是否需重新運算 Z-Score。` 
+        });
+
         alert('已提交評分！等待 HR 進行標準化計算。');
     };
     const handleGenerateAI = async () => {
@@ -287,10 +303,32 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
 // HR View
 const HRView = ({ user, employees, users, evaluations, settings, onUpdateSettings, onSave, onBatchSave, onSaveUsers, onSaveEmployees }: any) => {
     const isGM = user.role === Role.GM;
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'reviews' | 'employees'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'reviews' | 'employees' | 'audit_logs'>('dashboard');
     const [editEval, setEditEval] = useState<Evaluation | null>(null);
     const [showSettings, setShowSettings] = useState(false);
     const [tempSettings, setTempSettings] = useState(settings);
+    const [logs, setLogs] = useState<AuditLog[]>([]);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'audit_logs') {
+            const fetchLogs = async () => { try { setLogs(await api.getLogs()); } catch(e) {console.error(e);} };
+            fetchLogs();
+        }
+        // Fetch notifications
+        const fetchNotifs = async () => { try { setNotifications(await api.getNotifications()); } catch(e) {console.error(e);} };
+        fetchNotifs();
+        // Poll every 10s? For now just once on mount/update is fine or trigger manual refresh.
+    }, [activeTab]);
+
+    const unreadCount = notifications.filter(n => !n.isRead && n.toRole.includes(user.role)).length;
+    const myNotifs = notifications.filter(n => n.toRole.includes(user.role));
+
+    const handleMarkRead = async (id: string) => {
+        await api.markNotificationRead(id);
+        setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+    };
 
     // Employee Mgmt State
     const [showEmpModal, setShowEmpModal] = useState(false);
@@ -362,7 +400,12 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
         const total = editEval.zScoreAdjusted + (k==='attendanceBonus'?v:editEval.attendanceBonus) + (k==='overallAdjustment'?v:editEval.overallAdjustment) + (k==='rewardsPunishments'?v:editEval.rewardsPunishments);
         setEditEval({...editEval, [k]: v, totalScore: parseFloat(total.toFixed(2)), grade: calculateGrade(total)});
     };
-    const handlePublish = () => { if(!editEval) return; onSave({...editEval, isHRComplete: true}); setEditEval(null); };
+    const handlePublish = () => { 
+        if(!editEval) return; 
+        if(editEval.isHRComplete && !confirm('此考核已發布。確定要重新發布嗎？')) return;
+        onSave({...editEval, isHRComplete: true}); 
+        setEditEval(null); 
+    };
 
     const handleExportCSV = () => {
         const targetEvals = evaluations.filter((ev:Evaluation) => ev.isHRComplete && ev.year === viewYear && ev.term === viewTerm);
@@ -432,11 +475,21 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
         }
         onSaveEmployees(newEmps);
         setShowEmpModal(false);
+
+        api.addLog({ 
+            userId: user.id, userName: user.name, action: editingEmp ? 'UPDATE' : 'CREATE', target: 'EMPLOYEE', targetId: empForm.id, 
+            details: `${editingEmp ? 'Updated' : 'Created'} employee ${empForm.name} (${empForm.id})` 
+        });
     };
     const handleDeleteEmployee = (id: string) => {
         if(confirm('確定刪除員工資料? 此動作連同 User 帳號會一併移除。')) {
             onSaveEmployees(employees.filter((e:Employee) => e.id !== id));
             onSaveUsers(users.filter((u:User) => u.id !== id));
+            
+            api.addLog({ 
+                userId: user.id, userName: user.name, action: 'DELETE', target: 'EMPLOYEE', targetId: id, 
+                details: `Deleted employee ${id}` 
+            });
         }
     };
 
@@ -457,13 +510,39 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
                     <button onClick={() => setActiveTab('dashboard')} className={`text-sm font-medium pb-1 ${activeTab==='dashboard'? 'text-indigo-600 border-b-2 border-indigo-600':'text-slate-500'}`}>儀表板</button>
                     <button onClick={() => setActiveTab('reviews')} className={`text-sm font-medium pb-1 ${activeTab==='reviews'? 'text-indigo-600 border-b-2 border-indigo-600':'text-slate-500'}`}>{isGM? '全體考核狀況' : `考核管理 (${submittedCount - finalizedCount} 待審)`}</button>
                     {!isGM && <button onClick={() => setActiveTab('employees')} className={`text-sm font-medium pb-1 ${activeTab==='employees'? 'text-indigo-600 border-b-2 border-indigo-600':'text-slate-500'}`}>人員管理</button>}
+                    <button onClick={() => setActiveTab('audit_logs')} className={`text-sm font-medium pb-1 ${activeTab==='audit_logs'? 'text-indigo-600 border-b-2 border-indigo-600':'text-slate-500'}`}>系統紀錄</button>
                   </div>
                 </div>
-                {!isGM && (
-                    <button onClick={() => setShowSettings(!showSettings)} className="text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg text-sm font-bold flex gap-2 w-full md:w-auto justify-center">
-                        <Settings size={16}/> 系統設定 (目前: {settings.activeYear} {settings.activeTerm})
-                    </button>
-                )}
+                <div className="flex gap-2">
+                    {/* Notification Bell */}
+                    <div className="relative">
+                        <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} className="relative p-2 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600">
+                            <Bell size={20} />
+                            {unreadCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center border-2 border-white">{unreadCount}</span>}
+                        </button>
+                        {showNotifDropdown && (
+                            <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-50 animate-in fade-in slide-in-from-top-2">
+                                <div className="p-3 border-b flex justify-between items-center"><h4 className="font-bold text-sm">通知</h4><button onClick={()=>setShowNotifDropdown(false)}><X size={16}/></button></div>
+                                <div className="max-h-64 overflow-y-auto">
+                                    {myNotifs.length === 0 ? <div className="p-4 text-center text-xs text-slate-400">目前沒有通知</div> : (
+                                        myNotifs.map(n => (
+                                            <div key={n.id} onClick={() => !n.isRead && handleMarkRead(n.id)} className={`p-3 border-b text-sm cursor-pointer hover:bg-slate-50 ${!n.isRead ? 'bg-indigo-50/50' : ''}`}>
+                                                <div className="flex justify-between mb-1"><span className={`text-xs font-bold ${!n.isRead?'text-indigo-600':'text-slate-500'}`}>{n.title}</span><span className="text-[10px] text-slate-400">{new Date(n.timestamp).toLocaleTimeString()}</span></div>
+                                                <p className="text-slate-700">{n.message}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {!isGM && (
+                        <button onClick={() => setShowSettings(!showSettings)} className="text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg text-sm font-bold flex gap-2 justify-center">
+                            <Settings size={16}/> 系統設定
+                        </button>
+                    )}
+                </div>
              </header>
 
              {showSettings && (
@@ -543,6 +622,32 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Audit Logs Tab */}
+            {activeTab === 'audit_logs' && (
+                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <div className="p-4 border-b bg-slate-50"><h3 className="font-bold text-lg">系統操作紀錄 (Audit Logs)</h3></div>
+                    <div className="overflow-x-auto max-h-[600px]">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-100 text-slate-500 text-xs uppercase sticky top-0">
+                                <tr><th className="p-3">Time</th><th className="p-3">User</th><th className="p-3">Action</th><th className="p-3">Target</th><th className="p-3">Details</th></tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {logs.map((log) => (
+                                    <tr key={log.id} className="hover:bg-slate-50">
+                                        <td className="p-3 whitespace-nowrap text-slate-500">{new Date(log.timestamp).toLocaleString()}</td>
+                                        <td className="p-3 font-bold">{log.userName}</td>
+                                        <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs font-bold ${log.action==='DELETE'?'bg-red-100 text-red-700':log.action==='CREATE'?'bg-green-100 text-green-700':log.action==='UPDATE'?'bg-blue-100 text-blue-700':'bg-slate-100 text-slate-700'}`}>{log.action}</span></td>
+                                        <td className="p-3 text-xs font-mono bg-slate-50 rounded">{log.target} {log.targetId}</td>
+                                        <td className="p-3 text-slate-600">{log.details}</td>
+                                    </tr>
+                                ))}
+                                {logs.length===0 && <tr><td colSpan={5} className="p-8 text-center text-slate-400">No logs found.</td></tr>}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 
@@ -694,6 +799,12 @@ const App = () => {
         if (found) { 
             setUser(found); 
             setView('DASHBOARD');
+            
+            api.addLog({
+                userId: found.id, userName: found.name, action: 'LOGIN', target: 'USER', targetId: found.id,
+                details: `User ${found.name} logged in.`
+            });
+
             // Set default view based on role
             if(found.role === Role.HR || found.role === Role.GM) setCurrentView('hr_dashboard');
             else if(found.role === Role.MANAGER) setCurrentView('manager_eval');
