@@ -10,12 +10,12 @@
         { "key": "engagement", "label": "敬業度 (Engagement)", "max": 5, "description": ["高度認同公司文化，積極參與各種公司活動。", "認同公司文化，並參與部分公司活動。", "對公司文化的認同感有限，僅偶爾參與活動。", "不積極參與公司文化活動，態度冷淡。", "拒絕參與公司活動，對公司文化持消極態度。"] }
     ],
     "SALES_MANAGER": [
-        { "key": "achievementRate", "label": "團隊業績達成率", "max": 30, "description": ["團隊超額達成目標 >120%", "團隊達成目標 100-119%", "團隊達成 90-99%", "團隊達成 70-89%", "團隊未達標 <70%"] },
-        { "key": "leadership", "label": "領導與管理 (Leadership)", "max": 20, "description": ["展現卓越領導力，團隊士氣高昂", "領導力良好", "具備基本管理能力", "管理能力需加強", "無法有效領導團隊"] },
-        { "key": "strategy", "label": "策略規劃 (Strategy)", "max": 15, "description": ["策略清晰且有效", "有規劃方向", "依循既有策略", "缺乏策略", "無規劃"] },
-        { "key": "talentDev", "label": "人才培育 (Talent Dev)", "max": 15, "description": ["積極培育接班人", "重視部屬發展", "偶有指導", "忽略人才培育", "阻礙人才發展"] },
-        { "key": "problemSolving", "label": "危機處理 (Crisis Mgmt)", "max": 10, "description": ["快速化解重大危機", "妥善處理", "能處理一般狀況", "反應遲緩", "無法處理"] },
-        { "key": "collaboration", "label": "跨部門合作", "max": 10, "description": ["主動促進跨部門協作", "配合度佳", "基本配合", "被動", "本位主義重"] }
+        { "key": "achievementRate", "label": "業績達成率 (Achievement)", "max": 35, "description": ["完全符合甚至超乎預期標準。", "幾乎完全符合需求，尚有小幅改善空間。", "符合需求，但某些項目不穩定，有明顯的改進空間。", "未能達到需求的標準，落後於目標達成預期。", "遠未達到需求的標準，表現極差。"] },
+        { "key": "salesAmount", "label": "業績額度 (Sales Amount)", "max": 20, "description": ["完全符合甚至超乎預期標準。", "幾乎完全符合需求，尚有小幅改善空間。", "符合需求，但某些項目不穩定，有明顯的改進空間。", "未能達到需求的標準，落後於目標達成預期。", "遠未達到需求的標準，表現極差。"] },
+        { "key": "problemSolving", "label": "問題解決能力 (Problem Solving)", "max": 15, "description": ["快速且高效地解決所有工作中遇到的問題。", "能夠有效解決大部分問題，僅少數需協助。", "能解決部分問題，但需依賴他人幫助。", "無法獨立解決問題，經常需他人介入。", "對問題的反應遲緩，未能解決或拖延問題處理。"] },
+        { "key": "collaboration", "label": "領導與管理 (Leadership)", "max": 15, "description": ["卓越", "良好", "普通", "需加強", "差"] },
+        { "key": "processImprov", "label": "流程改善 (Optimization)", "max": 10, "description": ["持續優化流程成效顯著", "有改善提案", "維持現狀", "抗拒改變", "流程混亂"] },
+        { "key": "engagement", "label": "敬業度 (Engagement)", "max": 5, "description": ["高度認同公司文化，積極參與各種公司活動。", "認同公司文化，並參與部分公司活動。", "對公司文化的認同感有限，僅偶爾參與活動。", "不積極參與公司文化活動，態度冷淡。", "拒絕參與公司活動，對公司文化持消極態度。"] }
     ],
     "ADMIN_STAFF": [
         { "key": "targetAchievement", "label": "工作目標達成 (Targets)", "max": 40, "description": ["完全符合甚至超乎預期標準。", "幾乎完全符合需求，尚有小幅改善空間。", "符合需求，但某些項目不穩定，有明顯的改進空間。", "未能達到需求的標準，落後於目標達成預期。", "遠未達到需求的標準，表現極差。"] },
@@ -27,10 +27,11 @@
         { "key": "engagement", "label": "敬業度 (Engagement)", "max": 5, "description": ["高度認同公司文化，積極參與各種公司活動。", "認同公司文化，並參與部分公司活動。", "對公司文化的認同感有限，僅偶爾參與活動。", "不積極參與公司文化活動，態度冷淡。", "拒絕參與公司活動，對公司文化持消極態度。"] }
     ],
     "ADMIN_MANAGER": [
-        { "key": "deptPerformance", "label": "部門績效指標", "max": 30, "description": ["部門表現優異", "達標", "尚可", "落後", "差勁"] },
-        { "key": "leadership", "label": "領導與管理", "max": 25, "description": ["卓越", "良好", "普通", "需加強", "差"] },
-        { "key": "processImprov", "label": "流程改善 (Optimization)", "max": 20, "description": ["持續優化流程成效顯著", "有改善提案", "維持現狀", "抗拒改變", "流程混亂"] },
-        { "key": "talentDev", "label": "人才培育", "max": 15, "description": ["積極", "重視", "普通", "忽視", "無"] },
-        { "key": "collaboration", "label": "跨部門溝通", "max": 10, "description": ["順暢無礙", "良好", "普通", "有隔閡", "衝突不斷"] }
+        { "key": "targetAchievement", "label": "工作目標達成 (Targets)", "max": 40, "description": ["完全符合甚至超乎預期標準。", "幾乎完全符合需求，尚有小幅改善空間。", "符合需求，但某些項目不穩定，有明顯的改進空間。", "未能達到需求的標準，落後於目標達成預期。", "遠未達到需求的標準，表現極差。"] },
+        { "key": "timeliness", "label": "時間完成度 (Timeliness)", "max": 10, "description": ["完全符合甚至超乎預期標準。", "幾乎完全符合需求，尚有小幅改善空間。", "符合需求，但某些項目不穩定，有明顯的改進空間。", "未能達到需求的標準，落後於目標達成預期。", "遠未達到需求的標準，表現極差。"] },
+        { "key": "problemSolving", "label": "問題解決能力 (Problem Solving)", "max": 15, "description": ["快速且高效地解決所有工作中遇到的問題。", "能夠有效解決大部分問題，僅少數需協助。", "能解決部分問題，但需依賴他人幫助。", "無法獨立解決問題，經常需他人介入。", "對問題的反應遲緩，未能解決或拖延問題處理。"] },
+        { "key": "leadership", "label": "領導與管理 (Leadership)", "max": 15, "description": ["卓越", "良好", "普通", "需加強", "差"] },
+        { "key": "processImprov", "label": "流程改善 (Optimization)", "max": 15, "description": ["持續優化流程成效顯著", "有改善提案", "維持現狀", "抗拒改變", "流程混亂"] },
+        { "key": "engagement", "label": "敬業度 (Engagement)", "max": 5, "description": ["高度認同公司文化，積極參與各種公司活動。", "認同公司文化，並參與部分公司活動。", "對公司文化的認同感有限，僅偶爾參與活動。", "不積極參與公司文化活動，態度冷淡。", "拒絕參與公司活動，對公司文化持消極態度。"] }
     ]
 }
