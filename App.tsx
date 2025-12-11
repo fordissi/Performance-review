@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Users, CheckCircle, BrainCircuit, TrendingUp, Shield, LogOut, FileText, History, Calendar, Settings, Save, Server, Edit, AlertTriangle, Menu, X, ChevronDown, ChevronUp, Calculator, BarChart3, Lock, Trophy, Activity, Clock, Plus, Trash2, Share2, ChevronLeft, ChevronRight, AlertCircle, Download, Bell } from 'lucide-react';
 import { Role, Employee, Evaluation, Department, User, DEPT_TYPE, TERMS, ScoreDetails, AssessmentTerm, AuditLog, Notification, CriteriaConfig, Metric } from './types';
-import { generateFeedback } from './services/geminiService';
+import { generateFeedback, generateInterviewGuide } from './services/geminiService';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { calculateRaw, calculateGrade, calculateStdDev, calculateMean } from './utils.ts';
 
@@ -157,6 +157,8 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
     const [scores, setScores] = useState<ScoreDetails>({});
     const [feedback, setFeedback] = useState('');
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+    const [interviewGuide, setInterviewGuide] = useState('');
+    const [isGeneratingGuide, setIsGeneratingGuide] = useState(false);
     const [showEmployeeList, setShowEmployeeList] = useState(false);
     const [criteriaConfig, setCriteriaConfig] = useState<CriteriaConfig | null>(null);
     
@@ -191,6 +193,7 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
         if (currentEval) {
             setScores(currentEval.scores);
             setFeedback(currentEval.feedback);
+            setInterviewGuide(currentEval.aiInterviewGuide || '');
         } else {
             // Default scores calculation based on active metrics
             // Default to ~70% if max > 10, else ~7
@@ -200,6 +203,7 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
             });
             setScores(defaults);
             setFeedback('');
+            setInterviewGuide('');
         }
     }, [selectedEmpId, currentEval, activeMetrics, selectedEmployee]);
 
@@ -214,7 +218,10 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
             scores, rawTotal: raw, zScoreAdjusted: currentEval?.zScoreAdjusted || raw, 
             attendanceBonus: currentEval?.attendanceBonus || 0, overallAdjustment: currentEval?.overallAdjustment || 0, rewardsPunishments: currentEval?.rewardsPunishments || 0,
             totalScore: (currentEval?.zScoreAdjusted || raw) + (currentEval?.attendanceBonus || 0) + (currentEval?.overallAdjustment || 0) + (currentEval?.rewardsPunishments || 0),
-            grade: '', feedback, isManagerComplete: true, isZScoreCalculated: currentEval?.isZScoreCalculated || false, isHRComplete: currentEval?.isHRComplete || false
+            grade: '', feedback, isManagerComplete: true, isZScoreCalculated: currentEval?.isZScoreCalculated || false, isHRComplete: currentEval?.isHRComplete || false,
+            // Preserve Self Eval & AI Guide
+            selfScores: currentEval?.selfScores, selfFeedback: currentEval?.selfFeedback, isSelfComplete: currentEval?.isSelfComplete,
+            aiInterviewGuide: interviewGuide
         });
         
         // Log
@@ -239,6 +246,14 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
         setIsGeneratingAI(false);
     };
 
+    const handleGenerateGuide = async () => {
+        if (!currentEval?.isSelfComplete || !currentEval?.selfScores) { alert('員工尚未完成自評，無法生成比較指南。'); return; }
+        setIsGeneratingGuide(true);
+        const guide = await generateInterviewGuide(selectedEmployee.name, scores, currentEval.selfScores, selectedEmployee.role);
+        setInterviewGuide(guide);
+        setIsGeneratingGuide(false);
+    };
+
     if (myEmployees.length === 0) return <div className="p-8 text-center text-slate-500">無指定下屬人員。</div>;
     if (!selectedEmployee) return <div>請選擇員工</div>;
 
@@ -261,6 +276,30 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
 
                     {mode === 'evaluate' && (
                         <>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h3 className="font-bold flex items-center gap-2 mb-4"><Users size={18}/> 績效面談準備</h3>
+                                <div className="bg-slate-50 p-4 rounded-lg">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-bold text-slate-700">員工自評狀態:</span>
+                                            {currentEval?.isSelfComplete ? <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1"><CheckCircle size={12}/> 已完成</span> : <span className="bg-slate-200 text-slate-500 text-xs px-2 py-0.5 rounded-full">未完成</span>}
+                                        </div>
+                                        {currentEval?.isSelfComplete && (
+                                            <button onClick={handleGenerateGuide} disabled={isGeneratingGuide} className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-3 py-1 rounded text-xs font-bold flex items-center gap-1">
+                                                <BrainCircuit size={14}/> {isGeneratingGuide ? '分析中...' : '生成面談指南'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    {interviewGuide ? (
+                                        <div className="bg-white p-3 rounded border border-indigo-100 text-sm whitespace-pre-line leading-relaxed">
+                                            {interviewGuide}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-slate-400 italic">點擊生成按鈕，AI 將分析您的評分與員工自評的落差，並提供面談建議。</p>
+                                    )}
+                                </div>
+                            </div>
+                            
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                                 <h2 className="text-lg font-bold border-b pb-4 mb-4">考核項目 - {selectedEmployee.isManager ? '管理職' : '一般職'} ({DEPT_TYPE[selectedEmployee.department] || 'ADMIN'})</h2>
                                 {activeMetrics.length === 0 ? <div className="text-center py-4 text-slate-500">Loading criteria...</div> : activeMetrics.map(metric => (
@@ -718,21 +757,73 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
 };
 
 // Employee View (Unified)
-const EmployeeView = ({ user, employees, evaluations, settings }: any) => {
+const EmployeeView = ({ user, employees, evaluations, settings, onSave }: any) => {
     // Try to find employee by ID first (safer), then Name
     const emp = employees.find((e:Employee) => e.id === user.id) || employees.find((e:Employee) => e.name === user.name);
     
     // View State
     const [viewYear, setViewYear] = useState(settings.activeYear);
     const [viewTerm, setViewTerm] = useState(settings.activeTerm);
+    const [isEditing, setIsEditing] = useState(false);
+    const [selfScores, setSelfScores] = useState<ScoreDetails>({});
+    const [selfFeedback, setSelfFeedback] = useState('');
+    
+    // Criteria
+    const [criteriaConfig, setCriteriaConfig] = useState<CriteriaConfig | null>(null);
+    useEffect(() => { api.getCriteria().then(setCriteriaConfig).catch(console.error); }, []);
 
     // Fallback if not mapped
     if (!emp) return <div className="p-8 text-center bg-white rounded-xl shadow-sm text-red-500">Error: User ID {user.id} not linked to Employee record.</div>;
 
     const ev = evaluations.find((e:Evaluation) => e.employeeId === emp.id && e.year === viewYear && e.term === viewTerm);
+    const isCurrentPeriod = viewYear === settings.activeYear && viewTerm === settings.activeTerm;
+
+    const activeMetrics = useMemo(() => {
+        if (!emp || !criteriaConfig) return [];
+        const dept = DEPT_TYPE[emp.department] || 'ADMIN';
+        const role = emp.isManager ? 'MANAGER' : 'STAFF';
+        const key = `${dept}_${role}`;
+        return criteriaConfig[key] || criteriaConfig[`ADMIN_${role}`] || [];
+    }, [emp, criteriaConfig]);
+
+    useEffect(() => {
+        if (ev) {
+            setSelfScores(ev.selfScores || {});
+            setSelfFeedback(ev.selfFeedback || '');
+        } else {
+            // Init empty
+            const defaults: ScoreDetails = {};
+            activeMetrics.forEach(m => defaults[m.key] = 0);
+            setSelfScores(defaults);
+            setSelfFeedback('');
+        }
+    }, [ev, activeMetrics]);
+
+    const handleScoreChange = (key: string, val: number) => setSelfScores(prev => ({ ...prev, [key]: val }));
+    const handleSaveSelf = () => {
+        if (!confirm('確定提交自評嗎？提交後主管將可看到您完成的狀態。')) return;
+        
+        const newEval: Evaluation = ev ? { ...ev, selfScores, selfFeedback, isSelfComplete: true } : {
+            employeeId: emp.id,
+            managerId: emp.managerId, // Critical: Must have manager
+            year: viewYear,
+            term: viewTerm,
+            scores: {}, // Manager scores empty if new
+            selfScores,
+            selfFeedback,
+            isSelfComplete: true,
+            isManagerComplete: false,
+            isHRComplete: false,
+            isZScoreCalculated: false,
+            rawTotal: 0, zScoreAdjusted: 0, attendanceBonus: 0, overallAdjustment: 0, rewardsPunishments: 0, totalScore: 0, grade: '', feedback: ''
+        };
+        onSave(newEval);
+        setIsEditing(false);
+        alert('自評已提交！');
+    };
 
     return (
-        <div className="max-w-md mx-auto">
+        <div className="max-w-4xl mx-auto">
             {/* View Selector */}
             <div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex justify-between items-center">
                 <span className="font-bold text-slate-700 flex items-center gap-2"><History size={16}/> 考核期間</span>
@@ -743,10 +834,61 @@ const EmployeeView = ({ user, employees, evaluations, settings }: any) => {
                 </div>
             </div>
 
+            {/* Self Evaluation Section (Only valid for Current Period) */}
+            {isCurrentPeriod && (
+                <div className="bg-white p-6 rounded-xl shadow-sm border mb-6 animate-in fade-in">
+                    <div className="flex justify-between items-center border-b pb-4 mb-4">
+                        <div>
+                            <h2 className="text-lg font-bold flex items-center gap-2"><Edit size={18}/> 員工自評區 ({viewYear} {viewTerm})</h2>
+                            <p className="text-xs text-slate-500">自評分數僅供主管面談參考，不計入最終考核成績。</p>
+                        </div>
+                        {!isEditing && (
+                            ev?.isSelfComplete 
+                            ? <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><CheckCircle size={14}/> 已完成 ({new Date().toISOString().slice(0,10)})</span>
+                            : <button onClick={()=>setIsEditing(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-700">開始自評</button>
+                        )}
+                        {isEditing && <button onClick={()=>setIsEditing(false)} className="text-slate-400 hover:text-slate-600">取消</button>}
+                    </div>
+
+                    {isEditing ? (
+                        <div className="space-y-6">
+                            {activeMetrics.map(metric => (
+                                <RangeInput 
+                                    key={metric.key}
+                                    label={metric.label}
+                                    max={metric.max}
+                                    description={metric.description}
+                                    value={selfScores[metric.key] || 0}
+                                    onChange={v => handleScoreChange(metric.key, v)}
+                                />
+                            ))}
+                            <div>
+                                <label className="font-bold text-sm mb-2 block">自評補充/心得</label>
+                                <textarea value={selfFeedback} onChange={e => setSelfFeedback(e.target.value)} className="w-full h-24 p-2 border rounded-lg text-sm" placeholder="本期工作心得..."></textarea>
+                            </div>
+                            <button onClick={handleSaveSelf} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">提交自評</button>
+                        </div>
+                    ) : (
+                        ev?.isSelfComplete && (
+                            <div className="text-slate-600 text-sm">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                   {activeMetrics.map(m => (
+                                       <div key={m.key} className="bg-slate-50 p-2 rounded border"><span className="text-[10px] text-slate-400 block">{m.label}</span><span className="font-bold">{selfScores[m.key] || 0} / {m.max}</span></div>
+                                   ))}
+                                </div>
+                                <p className="bg-slate-50 p-3 rounded italic">"{selfFeedback}"</p>
+                                <button onClick={()=>setIsEditing(true)} className="mt-4 text-xs text-indigo-600 hover:underline">修改自評</button>
+                            </div>
+                        )
+                    )}
+                </div>
+            )}
+
+            {/* Official Result Display */}
             {(!ev || !ev.isHRComplete) ? (
                 <div className="p-8 text-center bg-white rounded-xl shadow-sm text-slate-500">
                     <p className="text-4xl mb-2">📭</p>
-                    <p>{viewYear} {viewTerm} 尚無已發布的考核結果。</p>
+                    <p>{viewYear} {viewTerm} 尚無已發布的正式考核結果。</p>
                 </div>
             ) : (
                 <div className="bg-white rounded-xl shadow-lg border overflow-hidden animate-in zoom-in-95">
@@ -909,7 +1051,7 @@ const App = () => {
             <main className="flex-1 p-4 lg:p-8 overflow-y-auto mt-16 lg:mt-0">
                 {currentView === 'hr_dashboard' && <HRView user={user} employees={employees} users={users} evaluations={evaluations} settings={settings} onUpdateSettings={handleUpdateSettings} onSave={handleSaveEvals} onBatchSave={handleBatchSaveEvals} onSaveUsers={handleSaveUsers} onSaveEmployees={handleSaveEmployees} />}
                 {currentView === 'manager_eval' && <ManagerView user={user} employees={employees} evaluations={evaluations} settings={settings} onSave={handleSaveEvals} />}
-                {currentView === 'my_eval' && <EmployeeView user={user} employees={employees} evaluations={evaluations} settings={settings} />}
+                {currentView === 'my_eval' && <EmployeeView user={user} employees={employees} evaluations={evaluations} settings={settings} onSave={handleSaveEvals} />}
                 {currentView === 'change_password' && <ChangePasswordView onSave={handleChangePassword} onCancel={() => {
                      // Cancel returns to default view
                      if(user.role === Role.HR || user.role === Role.GM) setCurrentView('hr_dashboard');

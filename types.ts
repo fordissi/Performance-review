@@ -1,20 +1,20 @@
 export enum Role {
-  MANAGER = 'MANAGER',
-  HR = 'HR',
-  EMPLOYEE = 'EMPLOYEE',
-  GM = 'GM' // New Role
+  MANAGER = "MANAGER",
+  HR = "HR",
+  EMPLOYEE = "EMPLOYEE",
+  GM = "GM", // New Role
 }
 
 export enum Department {
-  ENGINEERING = 'Engineering',
-  SALES = 'Sales',
-  MARKETING = 'Marketing',
-  HR = 'Human Resources',
-  FINANCIAL_ACCOUNTING = 'Financial Accounting',
-  ADMINISTRATION = 'Administrative Support',
-  LOGISTICS = 'Logistics',
-  PHARMACY = 'Pharmacy',
-  MANAGEMENT = 'Management' // For GM
+  ENGINEERING = "Engineering",
+  SALES = "Sales",
+  MARKETING = "Marketing",
+  HR = "Human Resources",
+  FINANCIAL_ACCOUNTING = "Financial Accounting",
+  ADMINISTRATION = "Administrative Support",
+  LOGISTICS = "Logistics",
+  PHARMACY = "Pharmacy",
+  MANAGEMENT = "Management", // For GM
 }
 
 export interface User {
@@ -40,39 +40,47 @@ export interface Employee {
 export type ScoreDetails = Record<string, number>;
 
 export interface Metric {
-    key: string;
-    label: string;
-    max: number;
-    description: string[]; // Rubrics: [90%+, 70%+, 60%+, 30%+, <30%]
+  key: string;
+  label: string;
+  max: number;
+  description: string[]; // Rubrics: [90%+, 70%+, 60%+, 30%+, <30%]
 }
 
 export interface CriteriaConfig {
-    [key: string]: Metric[]; // Key: DEPT_ROLE e.g. SALES_STAFF, ADMIN_MANAGER
+  [key: string]: Metric[]; // Key: DEPT_ROLE e.g. SALES_STAFF, ADMIN_MANAGER
 }
 
 export interface Evaluation {
   employeeId: string;
   managerId: string;
   year: number;
-  term: string; 
-  
+  term: string;
+
   // Scoring
   scores: ScoreDetails;
-  
+
+  // Self Evaluation
+  selfScores?: ScoreDetails;
+  selfFeedback?: string;
+  isSelfComplete?: boolean;
+
+  // AI Interview Guide
+  aiInterviewGuide?: string;
+
   // Z-Score Logic
   rawTotal: number;
   zScoreAdjusted: number;
-  
+
   // HR Adjustments
-  attendanceBonus: number;     
-  overallAdjustment: number;   
-  rewardsPunishments: number;  
-  
+  attendanceBonus: number;
+  overallAdjustment: number;
+  rewardsPunishments: number;
+
   // Results
   totalScore: number;
-  grade?: string; 
+  grade?: string;
   feedback: string;
-  
+
   // Status
   isManagerComplete: boolean;
   isZScoreCalculated: boolean;
@@ -80,36 +88,45 @@ export interface Evaluation {
 }
 
 export const DEPT_TYPE = {
-    [Department.SALES]: 'SALES',
-    [Department.MARKETING]: 'SALES',
-    [Department.ENGINEERING]: 'ADMIN',
-    [Department.HR]: 'ADMIN',
-    [Department.MANAGEMENT]: 'ADMIN',
-    [Department.FINANCIAL_ACCOUNTING]: 'ADMIN',
-    [Department.ADMINISTRATION]: 'ADMIN',
-    [Department.LOGISTICS]: 'ADMIN',
-    [Department.PHARMACY]: 'ADMIN'
+  [Department.SALES]: "SALES",
+  [Department.MARKETING]: "SALES",
+  [Department.ENGINEERING]: "ADMIN",
+  [Department.HR]: "ADMIN",
+  [Department.MANAGEMENT]: "ADMIN",
+  [Department.FINANCIAL_ACCOUNTING]: "ADMIN",
+  [Department.ADMINISTRATION]: "ADMIN",
+  [Department.LOGISTICS]: "ADMIN",
+  [Department.PHARMACY]: "ADMIN",
 };
 
-export const TERMS = ['Yearly', 'Half-Yearly', 'Q1', 'Q2', 'Q3', 'Q4', 'Probation', 'PIP'] as const;
-export type AssessmentTerm = typeof TERMS[number];
+export const TERMS = [
+  "Yearly",
+  "Half-Yearly",
+  "Q1",
+  "Q2",
+  "Q3",
+  "Q4",
+  "Probation",
+  "PIP",
+] as const;
+export type AssessmentTerm = (typeof TERMS)[number];
 
 export interface AuditLog {
-    id: string;
-    timestamp: string;
-    userId: string;
-    userName: string;
-    action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN';
-    target: 'EMPLOYEE' | 'USER' | 'EVALUATION';
-    targetId: string;
-    details: string;
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  action: "CREATE" | "UPDATE" | "DELETE" | "LOGIN";
+  target: "EMPLOYEE" | "USER" | "EVALUATION";
+  targetId: string;
+  details: string;
 }
 
 export interface Notification {
-    id: string;
-    timestamp: string;
-    toRole: Role[]; 
-    title: string;
-    message: string;
-    isRead: boolean;
+  id: string;
+  timestamp: string;
+  toRole: Role[];
+  title: string;
+  message: string;
+  isRead: boolean;
 }
