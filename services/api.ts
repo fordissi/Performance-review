@@ -27,6 +27,10 @@ export interface ApiService {
   // Criteria
   getCriteria(): Promise<CriteriaConfig>;
   saveCriteria(config: CriteriaConfig): Promise<void>;
+
+  // Settings
+  getSettings(): Promise<any>;
+  saveSettings(settings: any): Promise<void>;
 }
 
 // --- File Service (Real Backend) ---
@@ -74,6 +78,10 @@ class FileApiService implements ApiService {
   // Criteria
   async getCriteria(): Promise<CriteriaConfig> { return this.fetchJson<CriteriaConfig>('/criteria'); }
   async saveCriteria(config: CriteriaConfig): Promise<void> { return this.postJson('/criteria', config); }
+
+  // Settings
+  async getSettings(): Promise<any> { return this.fetchJson<any>('/settings'); }
+  async saveSettings(settings: any): Promise<void> { return this.postJson('/settings', settings); }
 }
 
 // --- Mock Service (LocalStorage + Sample Data) ---
@@ -155,6 +163,14 @@ class MockApiService implements ApiService {
   }
   async saveCriteria(config: CriteriaConfig): Promise<void> {
       this.save('mock_criteria', config);
+  }
+
+  // Settings
+  async getSettings(): Promise<any> {
+      return this.load<any>('mock_settings', { activeYear: 2024, activeTerm: 'Yearly', periodName: "2024 Annual Performance Review" });
+  }
+  async saveSettings(settings: any): Promise<void> {
+      this.save('mock_settings', settings);
   }
 }
 

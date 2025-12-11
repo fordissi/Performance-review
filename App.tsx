@@ -818,11 +818,13 @@ const App = () => {
     useEffect(() => {
         const loadJava = async () => {
              try {
-                 const [u, e, ev] = await Promise.all([api.getUsers(), api.getEmployees(), api.getEvaluations()]);
+                 const [u, e, ev, setts] = await Promise.all([api.getUsers(), api.getEmployees(), api.getEvaluations(), api.getSettings()]);
                  setUsers(u);
                  setEmployees(e);
                  // Fix: Ensure evaluations is always an array
                  if(Array.isArray(ev)) setEvaluations(ev); else setEvaluations([]);
+                 // Load Settings
+                 if(setts) setSettings(setts);
              } catch (err) {
                  console.error("Failed to load data", err);
              }
@@ -869,7 +871,10 @@ const App = () => {
        await api.saveEvaluations(merged);
     };
 
-    const handleUpdateSettings = (s: SystemSettings) => setSettings(s);
+    const handleUpdateSettings = async (s: SystemSettings) => {
+        await api.saveSettings(s);
+        setSettings(s);
+    };
     const handleSaveUsers = async (newUsers: User[]) => { setUsers(newUsers); await api.saveUsers(newUsers); };
     const handleSaveEmployees = async (newEmps: Employee[]) => { setEmployees(newEmps); await api.saveEmployees(newEmps); };
 

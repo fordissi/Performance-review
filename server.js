@@ -132,6 +132,21 @@ app.post('/api/criteria', (req, res) => {
     });
 });
 
+// Settings
+const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
+const DEFAULT_SETTINGS = { activeYear: 2024, activeTerm: 'Yearly', periodName: "2024 Annual Performance Review" };
+if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+
+app.get('/api/settings', (req, res) => handleGet(SETTINGS_FILE, res));
+app.post('/api/settings', (req, res) => {
+    // Note: handlePost checks for array, but settings is an object. Custom handler needed.
+    const newData = req.body;
+    fs.writeFile(SETTINGS_FILE, JSON.stringify(newData, null, 2), (err) => {
+        if (err) return res.status(500).json({ error: 'Failed to save data' });
+        res.json({ success: true });
+    });
+});
+
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
