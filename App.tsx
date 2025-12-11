@@ -35,7 +35,15 @@ const DEFAULT_SETTINGS: SystemSettings = {
 
 // --- COMPONENTS ---
 // --- COMPONENTS ---
-const RangeInput = ({ label, value, max, description, onChange }: { label: string, value: number, max: number, description: string[], onChange: (v: number) => void }) => {
+interface RangeInputProps {
+    label: string;
+    value: number;
+    max: number;
+    description: string[];
+    onChange: (v: number) => void;
+}
+
+const RangeInput: React.FC<RangeInputProps> = ({ label, value, max, description, onChange }) => {
     const percent = max > 0 ? Math.round((value / max) * 100) : 0;
     const handleChange = (newPercent: number) => {
         const newValue = Math.round((newPercent / 100) * max);
