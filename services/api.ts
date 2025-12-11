@@ -2,6 +2,7 @@ import { User, Employee, Evaluation, AuditLog, Notification, CriteriaConfig } fr
 import usersSample from '../data/users.sample.json';
 import employeesSample from '../data/employees.sample.json';
 import evaluationsSample from '../data/evaluations.sample.json';
+import criteriaSample from '../data/criteria.json';
 
 // --- Interfaces ---
 export interface ApiService {
@@ -150,7 +151,7 @@ class MockApiService implements ApiService {
   // Criteria
   async getCriteria(): Promise<CriteriaConfig> {
       // Return default if not found
-      return this.load<CriteriaConfig>('mock_criteria', {});
+      return this.load<CriteriaConfig>('mock_criteria', criteriaSample);
   }
   async saveCriteria(config: CriteriaConfig): Promise<void> {
       this.save('mock_criteria', config);
