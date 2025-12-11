@@ -80,14 +80,56 @@ const LoginView = ({ onLogin, users }: { onLogin: (u: User) => void, users: User
         const user = users.find(u => u.username === username && u.password === password);
         if (user) onLogin(user); else setError('帳號或是密碼錯誤');
     };
+    const isDemo = import.meta.env.VITE_USE_MOCK === 'true';
+
     return (
-        <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row items-center justify-center p-4 gap-8">
+            {/* Features Guide - Only for Demo/Recruiters */}
+            {isDemo && (
+                <div className="max-w-md w-full text-slate-700 animate-in slide-in-from-left-4 fade-in duration-500 hidden md:block">
+                    <div className="mb-8">
+                        <h1 className="text-4xl font-bold text-slate-900 mb-2 flex items-center gap-2"><TrendingUp className="text-indigo-600"/> PerformX</h1>
+                        <p className="text-xl text-slate-500">AI 驅動的現代化績效考核系統</p>
+                    </div>
+                    
+                    <div className="space-y-6">
+                        <div className="flex gap-4">
+                            <div className="bg-white p-3 rounded-lg shadow-sm h-fit"><BrainCircuit className="text-indigo-600" size={24}/></div>
+                            <div>
+                                <h3 className="font-bold text-lg">AI 智能輔助</h3>
+                                <p className="text-sm text-slate-500">自動生成考核評語、分析自評與主管評分的認知落差，並提供面談引導建議。</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="bg-white p-3 rounded-lg shadow-sm h-fit"><Calculator className="text-green-600" size={24}/></div>
+                            <div>
+                                <h3 className="font-bold text-lg">Z-Score 科學化評分</h3>
+                                <p className="text-sm text-slate-500">自動標準化不同主管的評分寬嚴度，確保跨部門考核的公平性。</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="bg-white p-3 rounded-lg shadow-sm h-fit"><Shield className="text-orange-600" size={24}/></div>
+                            <div>
+                                <h3 className="font-bold text-lg">角色權限分流</h3>
+                                <ul className="text-sm text-slate-500 list-disc list-inside mt-1 space-y-1">
+                                    <li><strong>GM</strong>: 全局戰情儀表板</li>
+                                    <li><strong>HR</strong>: 系統參數與人員管理</li>
+                                    <li><strong>Manager</strong>: 團隊考核與 AI 分析</li>
+                                    <li><strong>Employee</strong>: 自評與歷史查閱</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Login Box */}
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md">
-                <div className="flex flex-col items-center mb-6"><div className="bg-indigo-600 p-3 rounded-xl mb-4"><TrendingUp className="text-white" size={32} /></div><h1 className="text-2xl font-bold text-slate-800">PerformX</h1></div>
+                <div className={isDemo ? "md:hidden flex flex-col items-center mb-6" : "flex flex-col items-center mb-6"}><div className="bg-indigo-600 p-3 rounded-xl mb-4"><TrendingUp className="text-white" size={32} /></div><h1 className="text-2xl font-bold text-slate-800">PerformX</h1></div>
                 <h2 className="text-xl font-bold mb-6 text-center text-slate-700">歡迎登入</h2>
                 <form onSubmit={handleLogin} className="space-y-4"><input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-3 border rounded-lg" placeholder="Username" /><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 border rounded-lg" placeholder="Password" />{error && <p className="text-red-500 text-sm">{error}</p>}<button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">登入</button></form>
                 
-                {import.meta.env.VITE_USE_MOCK === 'true' && (
+                {isDemo && (
                     <div className="mt-6 pt-6 border-t border-slate-200 animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex items-center gap-2 mb-3 text-sm font-bold text-slate-500"><AlertCircle size={14}/> Demo Mode Credentials</div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
