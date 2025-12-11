@@ -115,6 +115,24 @@ app.post('/api/notifications/:id/read', (req, res) => {
 });
 
 
+
+
+// Criteria
+const CRITERIA_FILE = path.join(__dirname, 'data', 'criteria.json');
+if (!fs.existsSync(CRITERIA_FILE)) {
+    // Should fallback to sample or create empty default? creating empty for now as I just wrote it.
+    // Actually I wrote it manually, so it exists.
+}
+
+app.get('/api/criteria', (req, res) => handleGet(CRITERIA_FILE, res));
+app.post('/api/criteria', (req, res) => {
+    fs.writeFile(CRITERIA_FILE, JSON.stringify(req.body, null, 2), (err) => {
+        if (err) return res.status(500).json({ error: 'Write error' });
+        res.json({ success: true });
+    });
+});
+
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
 });

@@ -29,3 +29,4 @@ dist-ssr
 !.env.example
 data/*.json
 !data/*.sample.json
+!data/criteria.json

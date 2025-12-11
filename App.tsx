@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Users, CheckCircle, BrainCircuit, TrendingUp, Shield, LogOut, FileText, History, Calendar, Settings, Save, Server, Edit, AlertTriangle, Menu, X, ChevronDown, ChevronUp, Calculator, BarChart3, Lock, Trophy, Activity, Clock, Plus, Trash2, Share2, ChevronLeft, ChevronRight, AlertCircle, Download, Bell } from 'lucide-react';
-import { Role, Employee, Evaluation, Department, User, DEPT_TYPE, TERMS, ScoreDetails, AssessmentTerm, AuditLog, Notification } from './types';
+import { Role, Employee, Evaluation, Department, User, DEPT_TYPE, TERMS, ScoreDetails, AssessmentTerm, AuditLog, Notification, CriteriaConfig, Metric } from './types';
 import { generateFeedback } from './services/geminiService';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { calculateRaw, calculateGrade, calculateStdDev, calculateMean } from './utils.ts';
@@ -23,35 +23,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
 };
 
 // --- DATA CONSTANTS ---
-type StandardType = 'QUALITY' | 'PROBLEM_SOLVING' | 'COLLABORATION' | 'LEARNING' | 'ENGAGEMENT';
-const STANDARDS_MAP: Record<StandardType, string[]> = {
-    QUALITY: [
-        '完全符合甚至超乎預期標準。', '幾乎完全符合需求，尚有小幅改善空間。', '符合需求，但某些項目不穩定，有明顯的改進空間。', '未能達到需求的標準，落後於目標達成預期，經常出現錯誤或效率低下，影響團隊或整體工作進度。', '遠未達到需求的標準，表現極差，經常導致嚴重錯誤或延宕，且未能展現任何改善意願或行動。'
-    ],
-    PROBLEM_SOLVING: [
-        '快速且高效地解決所有工作中遇到的問題。', '能夠有效解決大部分問題，僅少數需協助。', '能解決部分問題，但需依賴他人幫助。', '無法獨立解決問題，經常需他人介入。', '對問題的反應遲緩，未能解決或拖延問題處理。'
-    ],
-    COLLABORATION: [
-        '積極主動參與團隊合作，並對團隊有顯著貢獻。', '良好的團隊合作能力，與同事相處融洽。', '基本參與團隊合作，但對團隊貢獻有限。', '偶爾參與團隊合作，合作意願不高。', '缺乏團隊合作精神，影響團隊整體效能。'
-    ],
-    LEARNING: [
-        '積極主動學習新知識並應用於工作中，顯著提升自身技能。', '經常參加學習活動，並能有效應用所學。', '參與學習活動，但對工作幫助有限。', '參與學習意願低，無明顯進步。', '拒絕學習，無意願提高專業技能。'
-    ],
-    ENGAGEMENT: [
-        '高度認同公司文化，積極參與各種公司活動。', '認同公司文化，並參與部分公司活動。', '對公司文化的認同感有限，僅偶爾參與活動。', '不積極參與公司文化活動，態度冷淡。', '拒絕參與公司活動，對公司文化持消極態度。'
-    ]
-};
 
-// --- HELPERS ---
-const getStandardText = (type: StandardType, pct: number) => {
-    const s = STANDARDS_MAP[type];
-    if(pct >= 90) return s[0];
-    if(type !== 'QUALITY' && pct >= 70) return s[1]; 
-    if(type === 'QUALITY' && pct >= 80) return s[1]; 
-    if(pct >= 60) return s[2];
-    if(pct >= 30) return s[3];
-    return s[4];
-};
 
 
 
@@ -62,13 +34,20 @@ const getStandardText = (type: StandardType, pct: number) => {
 
 
 // --- COMPONENTS ---
-const RangeInput = ({ label, value, max, standardType, onChange }: { label: string, value: number, max: number, standardType: StandardType, onChange: (v: number) => void }) => {
+// --- COMPONENTS ---
+const RangeInput = ({ label, value, max, description, onChange }: { label: string, value: number, max: number, description: string[], onChange: (v: number) => void }) => {
     const percent = max > 0 ? Math.round((value / max) * 100) : 0;
     const handleChange = (newPercent: number) => {
         const newValue = Math.round((newPercent / 100) * max);
         onChange(newValue);
     };
-    const desc = getStandardText(standardType, percent);
+    
+    // Determine description based on percentage
+    let desc = description[4] || ''; // Default to last (worst)
+    if(percent >= 90) desc = description[0];
+    else if(percent >= 70) desc = description[1];
+    else if(percent >= 60) desc = description[2];
+    else if(percent >= 30) desc = description[3];
 
     return (
         <div className="mb-8">
@@ -166,10 +145,11 @@ const Sidebar = ({ user, onLogout, isOpen, onClose, viewMode, setViewMode }: { u
 const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) => {
     const myEmployees = employees.filter((e: Employee) => e.managerId === user.id);
     const [selectedEmpId, setSelectedEmpId] = useState(myEmployees[0]?.id || '');
-    const [scores, setScores] = useState<ScoreDetails>({ problemSolving: 0, collaboration: 0, professionalDev: 0, engagement: 0 });
+    const [scores, setScores] = useState<ScoreDetails>({});
     const [feedback, setFeedback] = useState('');
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
     const [showEmployeeList, setShowEmployeeList] = useState(false);
+    const [criteriaConfig, setCriteriaConfig] = useState<CriteriaConfig | null>(null);
     
     // View Mode for Manager: 'evaluate' (Current Active) or 'history' (Past)
     const [mode, setMode] = useState<'evaluate' | 'history'>('evaluate');
@@ -182,7 +162,18 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
     // History Evaluations (Read-Only)
     const historyEvals = evaluations.filter((e:Evaluation) => e.employeeId === selectedEmpId && !(e.year === settings.activeYear && e.term === settings.activeTerm)).sort((a:Evaluation,b:Evaluation) => b.year - a.year);
 
-    const isSales = selectedEmployee ? DEPT_TYPE[selectedEmployee.department] === 'SALES' : false;
+    // Dynamic Criteria Logic
+    useEffect(() => {
+        api.getCriteria().then(setCriteriaConfig).catch(console.error);
+    }, []);
+
+    const activeMetrics = useMemo(() => {
+        if (!selectedEmployee || !criteriaConfig) return [];
+        const dept = DEPT_TYPE[selectedEmployee.department] || 'ADMIN';
+        const role = selectedEmployee.isManager ? 'MANAGER' : 'STAFF';
+        const key = `${dept}_${role}`;
+        return criteriaConfig[key] || criteriaConfig[`ADMIN_${role}`] || [];
+    }, [selectedEmployee, criteriaConfig]);
 
     useEffect(() => {
         if (!selectedEmployee) return;
@@ -192,13 +183,16 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
             setScores(currentEval.scores);
             setFeedback(currentEval.feedback);
         } else {
-            const defaults: any = { problemSolving: 7, collaboration: 7, professionalDev: 3, engagement: 3 };
-            if(isSales) { defaults.achievementRate = 25; defaults.salesAmount = 15; defaults.developmentActive = 7; defaults.activityQuality = 3; }
-            else { defaults.accuracy = 15; defaults.timeliness = 7; defaults.targetAchievement = 30; }
+            // Default scores calculation based on active metrics
+            // Default to ~70% if max > 10, else ~7
+            const defaults: ScoreDetails = {};
+            activeMetrics.forEach(m => {
+                defaults[m.key] = Math.ceil(m.max * 0.7);
+            });
             setScores(defaults);
             setFeedback('');
         }
-    }, [selectedEmpId, currentEval, isSales, selectedEmployee]);
+    }, [selectedEmpId, currentEval, activeMetrics, selectedEmployee]);
 
     const handleScoreChange = (key: keyof ScoreDetails, val: number) => setScores(prev => ({ ...prev, [key]: val }));
     const handleSave = () => {
@@ -259,10 +253,17 @@ const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) =>
                     {mode === 'evaluate' && (
                         <>
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                <h2 className="text-lg font-bold border-b pb-4 mb-4">目標與品質 (70%) - {isSales ? '業務部' : '行政部'}</h2>
-                                {isSales ? ( <> <RangeInput label="業績達成率" max={35} standardType="QUALITY" value={scores.achievementRate || 0} onChange={v => handleScoreChange('achievementRate', v)} /> <RangeInput label="業績額度" max={20} standardType="QUALITY" value={scores.salesAmount || 0} onChange={v => handleScoreChange('salesAmount', v)} /> <RangeInput label="業務開發積極度" max={10} standardType="QUALITY" value={scores.developmentActive || 0} onChange={v => handleScoreChange('developmentActive', v)} /> <RangeInput label="業務活動品質" max={5} standardType="QUALITY" value={scores.activityQuality || 0} onChange={v => handleScoreChange('activityQuality', v)} /> </> ) : ( <> <RangeInput label="工作目標達成" max={40} standardType="QUALITY" value={scores.targetAchievement || 0} onChange={v => handleScoreChange('targetAchievement', v)} /> <RangeInput label="作業準確度" max={20} standardType="QUALITY" value={scores.accuracy || 0} onChange={v => handleScoreChange('accuracy', v)} /> <RangeInput label="時間完成度" max={10} standardType="QUALITY" value={scores.timeliness || 0} onChange={v => handleScoreChange('timeliness', v)} /> </> )}
-                                <h2 className="text-lg font-bold border-b pb-4 mb-4 mt-8">共同項目 (30%)</h2>
-                                <RangeInput label="問題解決能力" max={10} standardType="PROBLEM_SOLVING" value={scores.problemSolving} onChange={v => handleScoreChange('problemSolving', v)} /> <RangeInput label="團隊合作" max={10} standardType="COLLABORATION" value={scores.collaboration} onChange={v => handleScoreChange('collaboration', v)} /> <RangeInput label="職業發展" max={5} standardType="LEARNING" value={scores.professionalDev} onChange={v => handleScoreChange('professionalDev', v)} /> <RangeInput label="敬業度" max={5} standardType="ENGAGEMENT" value={scores.engagement} onChange={v => handleScoreChange('engagement', v)} />
+                                <h2 className="text-lg font-bold border-b pb-4 mb-4">考核項目 - {selectedEmployee.isManager ? '管理職' : '一般職'} ({DEPT_TYPE[selectedEmployee.department] || 'ADMIN'})</h2>
+                                {activeMetrics.length === 0 ? <div className="text-center py-4 text-slate-500">Loading criteria...</div> : activeMetrics.map(metric => (
+                                    <RangeInput 
+                                        key={metric.key}
+                                        label={metric.label}
+                                        max={metric.max}
+                                        description={metric.description}
+                                        value={scores[metric.key] || 0}
+                                        onChange={v => handleScoreChange(metric.key, v)}
+                                    />
+                                ))}
                             </div>
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><div className="flex justify-between items-center mb-4"><h3 className="font-bold">主管評語</h3><button onClick={handleGenerateAI} disabled={isGeneratingAI} className="text-indigo-600 text-xs font-bold flex items-center gap-1"><BrainCircuit size={14}/> {isGeneratingAI ? 'Generating...' : 'AI 寫評語'}</button></div><textarea value={feedback} onChange={e => setFeedback(e.target.value)} className="w-full h-32 p-3 border rounded-lg text-sm" placeholder="請輸入..."></textarea><button onClick={handleSave} className="w-full mt-4 bg-indigo-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg">提交</button></div>
                         </>
@@ -310,6 +311,8 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+    const [showCriteriaEditor, setShowCriteriaEditor] = useState(false);
+    const [criteriaJson, setCriteriaJson] = useState('');
 
     useEffect(() => {
         if (activeTab === 'audit_logs') {
@@ -546,11 +549,32 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
              </header>
 
              {showSettings && (
-                 <div className="bg-slate-800 text-white p-6 rounded-xl shadow-xl flex gap-4 items-end animate-in fade-in slide-in-from-top-4">
-                     <div><label>Active Year</label><select value={tempSettings.activeYear} onChange={e=>setTempSettings({...tempSettings, activeYear: parseInt(e.target.value)})} className="text-black block rounded p-1 w-24">{YEARS.map(y=><option key={y}>{y}</option>)}</select></div>
-                     <div><label>Active Term</label><select value={tempSettings.activeTerm} onChange={e=>setTempSettings({...tempSettings, activeTerm: e.target.value})} className="text-black block rounded p-1 w-32">{TERMS.map(t=><option key={t}>{t}</option>)}</select></div>
-                     <div className="flex-1"><label>Period Name (Display)</label><input className="text-black block rounded p-1 w-full" value={tempSettings.periodName} onChange={e=>setTempSettings({...tempSettings, periodName: e.target.value})}/></div>
-                     <button onClick={() => { onUpdateSettings(tempSettings); setShowSettings(false); setViewYear(tempSettings.activeYear); setViewTerm(tempSettings.activeTerm); }} className="bg-green-600 px-4 py-1 rounded font-bold">Save & Apply</button>
+                 <div className="bg-slate-800 text-white p-6 rounded-xl shadow-xl space-y-4 animate-in fade-in slide-in-from-top-4">
+                     <div className="flex gap-4 items-end">
+                        <div><label>Active Year</label><select value={tempSettings.activeYear} onChange={e=>setTempSettings({...tempSettings, activeYear: parseInt(e.target.value)})} className="text-black block rounded p-1 w-24">{YEARS.map(y=><option key={y}>{y}</option>)}</select></div>
+                        <div><label>Active Term</label><select value={tempSettings.activeTerm} onChange={e=>setTempSettings({...tempSettings, activeTerm: e.target.value})} className="text-black block rounded p-1 w-32">{TERMS.map(t=><option key={t}>{t}</option>)}</select></div>
+                        <div className="flex-1"><label>Period Name (Display)</label><input className="text-black block rounded p-1 w-full" value={tempSettings.periodName} onChange={e=>setTempSettings({...tempSettings, periodName: e.target.value})}/></div>
+                        <button onClick={() => { setShowCriteriaEditor(!showCriteriaEditor); if(!showCriteriaEditor) api.getCriteria().then(c=>setCriteriaJson(JSON.stringify(c,null,2))); }} className="bg-orange-600 px-4 py-1 rounded font-bold hover:bg-orange-700">
+                             {showCriteriaEditor ? 'Close Editor' : 'Edit Criteria (JSON)'}
+                        </button>
+                        <button onClick={() => { onUpdateSettings(tempSettings); setShowSettings(false); setViewYear(tempSettings.activeYear); setViewTerm(tempSettings.activeTerm); }} className="bg-green-600 px-4 py-1 rounded font-bold hover:bg-green-700">Save & Apply</button>
+                     </div>
+                     
+                     {showCriteriaEditor && (
+                         <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 mt-4">
+                             <div className="flex justify-between mb-2">
+                                 <h4 className="font-bold text-orange-400">Criteria JSON Configuration</h4>
+                                 <button onClick={() => {
+                                     try {
+                                         const parsed = JSON.parse(criteriaJson);
+                                         api.saveCriteria(parsed).then(() => alert('Criteria Saved!'));
+                                     } catch(e) { alert('Invalid JSON'); }
+                                 }} className="bg-orange-600 px-3 py-1 rounded text-xs font-bold hover:bg-orange-700">Save Criteria</button>
+                             </div>
+                             <textarea value={criteriaJson} onChange={e=>setCriteriaJson(e.target.value)} className="w-full h-64 bg-black text-green-400 font-mono text-xs p-2 rounded outline-none border border-slate-700" spellCheck={false}></textarea>
+                             <p className="text-xs text-slate-500 mt-2">Modify the metrics, weights, and rubrics for each department/role combo. Use with caution.</p>
+                         </div>
+                     )}
                  </div>
               )}
 

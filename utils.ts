@@ -1,11 +1,7 @@
 import { ScoreDetails } from './types';
 
 export function calculateRaw(scores: ScoreDetails): number {
-    let base = 0;
-    if(scores.achievementRate !== undefined) base += (scores.achievementRate || 0) + (scores.salesAmount || 0) + (scores.developmentActive || 0) + (scores.activityQuality || 0);
-    else if(scores.accuracy !== undefined) base += (scores.accuracy || 0) + (scores.timeliness || 0) + (scores.targetAchievement || 0);
-    base += (scores.problemSolving || 0) + (scores.collaboration || 0) + (scores.professionalDev || 0) + (scores.engagement || 0);
-    return base;
+    return Object.values(scores).reduce((sum, val) => sum + (val || 0), 0);
 }
 
 export function calculateGrade(score: number): string {

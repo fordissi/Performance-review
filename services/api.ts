@@ -1,4 +1,4 @@
-import { User, Employee, Evaluation, AuditLog, Notification } from '../types';
+import { User, Employee, Evaluation, AuditLog, Notification, CriteriaConfig } from '../types';
 import usersSample from '../data/users.sample.json';
 import employeesSample from '../data/employees.sample.json';
 import evaluationsSample from '../data/evaluations.sample.json';
@@ -22,6 +22,10 @@ export interface ApiService {
   getNotifications(): Promise<Notification[]>;
   addNotification(notif: Omit<Notification, 'id' | 'timestamp' | 'isRead'>): Promise<void>;
   markNotificationRead(id: string): Promise<void>;
+
+  // Criteria
+  getCriteria(): Promise<CriteriaConfig>;
+  saveCriteria(config: CriteriaConfig): Promise<void>;
 }
 
 // --- File Service (Real Backend) ---
@@ -65,6 +69,10 @@ class FileApiService implements ApiService {
       const res = await fetch(`${API_BASE}/notifications/${id}/read`, { method: 'POST' });
       if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
   }
+
+  // Criteria
+  async getCriteria(): Promise<CriteriaConfig> { return this.fetchJson<CriteriaConfig>('/criteria'); }
+  async saveCriteria(config: CriteriaConfig): Promise<void> { return this.postJson('/criteria', config); }
 }
 
 // --- Mock Service (LocalStorage + Sample Data) ---
@@ -137,6 +145,15 @@ class MockApiService implements ApiService {
       const list = await this.getNotifications();
       const updated = list.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n);
       this.save('mock_notifications', updated);
+  }
+
+  // Criteria
+  async getCriteria(): Promise<CriteriaConfig> {
+      // Return default if not found
+      return this.load<CriteriaConfig>('mock_criteria', {});
+  }
+  async saveCriteria(config: CriteriaConfig): Promise<void> {
+      this.save('mock_criteria', config);
   }
 }
 

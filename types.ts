@@ -32,23 +32,18 @@ export interface Employee {
   avatar: string;
 }
 
-export interface ScoreDetails {
-  // Sales Dept (70%)
-  achievementRate?: number; // 35
-  salesAmount?: number;     // 20
-  developmentActive?: number; // 10
-  activityQuality?: number;   // 5
-  
-  // Admin Dept (70%)
-  accuracy?: number;        // 20
-  timeliness?: number;      // 10
-  targetAchievement?: number; // 40
+// Dynamic Score Details
+export type ScoreDetails = Record<string, number>;
 
-  // Common (30%)
-  problemSolving: number;   // 10
-  collaboration: number;    // 10
-  professionalDev: number;  // 5
-  engagement: number;       // 5
+export interface Metric {
+    key: string;
+    label: string;
+    max: number;
+    description: string[]; // Rubrics: [90%+, 70%+, 60%+, 30%+, <30%]
+}
+
+export interface CriteriaConfig {
+    [key: string]: Metric[]; // Key: DEPT_ROLE e.g. SALES_STAFF, ADMIN_MANAGER
 }
 
 export interface Evaluation {
