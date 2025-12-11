@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, CheckCircle, BrainCircuit, TrendingUp, Shield, LogOut, FileText, History, Calendar, Settings, Save, Server, Edit, AlertTriangle, Menu, X, ChevronDown, ChevronUp, Calculator, BarChart3, Lock, Trophy, Activity, Clock, Plus, Trash2, Share2, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { Users, CheckCircle, BrainCircuit, TrendingUp, Shield, LogOut, FileText, History, Calendar, Settings, Save, Server, Edit, AlertTriangle, Menu, X, ChevronDown, ChevronUp, Calculator, BarChart3, Lock, Trophy, Activity, Clock, Plus, Trash2, Share2, ChevronLeft, ChevronRight, AlertCircle, Download } from 'lucide-react';
 import { Role, Employee, Evaluation, Department, User, DEPT_TYPE, TERMS, ScoreDetails, AssessmentTerm } from './types';
 import { generateFeedback } from './services/geminiService';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
@@ -364,6 +364,42 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
     };
     const handlePublish = () => { if(!editEval) return; onSave({...editEval, isHRComplete: true}); setEditEval(null); };
 
+    const handleExportCSV = () => {
+        const targetEvals = evaluations.filter((ev:Evaluation) => ev.isHRComplete && ev.year === viewYear && ev.term === viewTerm);
+        if(targetEvals.length === 0) { alert('本期尚無已發布的考核資料可匯出。'); return; }
+
+        const headers = ['EmployeeID', 'Name', 'Role', 'Department', 'Year', 'Term', 'Raw Score', 'Z-Score', 'Attendance', 'Overall Adj', 'Rewards', 'Total Score', 'Grade', 'Feedback'];
+        const csvRows = targetEvals.map((ev: Evaluation) => {
+            const emp = employees.find((e:Employee) => e.id === ev.employeeId);
+            return [
+                ev.employeeId,
+                emp?.name || 'Unknown',
+                emp?.role || '',
+                emp?.department || '',
+                ev.year,
+                ev.term,
+                ev.rawTotal,
+                ev.zScoreAdjusted,
+                ev.attendanceBonus,
+                ev.overallAdjustment,
+                ev.rewardsPunishments,
+                ev.totalScore,
+                ev.grade,
+                `"${(ev.feedback || '').replace(/"/g, '""')}"`
+            ].join(',');
+        });
+
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Performance_Reviews_${viewYear}_${viewTerm}_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Employee & User Mgmt Handlers
     const handleAddEmployee = () => {
         setEditingEmp(null);
@@ -458,8 +494,12 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
 
              {activeTab === 'reviews' && (
                   <div className="grid grid-cols-12 gap-6 h-[600px]">
-                      <div className="col-span-4 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
-                           {!isGM && <div className="p-4 border-b bg-slate-50"><button onClick={calculateZScores} className="w-full bg-slate-800 text-white py-2 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-slate-700"><Calculator size={16}/> 執行 Z-Score 標準化 ({viewYear} {viewTerm})</button><p className="text-xs text-slate-500 mt-2 text-center">計算後將自動更新所有所有分數</p></div>}
+                       <div className="col-span-4 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
+                           {!isGM && <div className="p-4 border-b bg-slate-50 space-y-2">
+                                <button onClick={calculateZScores} className="w-full bg-slate-800 text-white py-2 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-slate-700 text-xs"><Calculator size={16}/> 1. 執行 Z-Score 標準化</button>
+                                <button onClick={handleExportCSV} className="w-full bg-green-600 text-white py-2 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-green-700 text-xs"><Download size={16}/> 2. 匯出 CSV 報表</button>
+                                <p className="text-xs text-slate-500 mt-2 text-center text-[10px]">匯出包含: 已完整發布且經過標準化之資料</p>
+                           </div>}
                            <div className="overflow-y-auto flex-1">{filtered.map(ev => {const emp = employees.find(e => e.id === ev.employeeId);return (<div key={ev.employeeId} onClick={() => setEditEval(ev)} className={`p-4 border-b cursor-pointer hover:bg-slate-50 ${editEval?.employeeId === ev.employeeId ? 'bg-indigo-50 border-l-4 border-indigo-500':''}`}><div className="flex justify-between"><span className="font-bold">{emp?.name} {emp.isManager && '⭐'}</span><span className={`px-2 text-xs rounded ${ev.isHRComplete?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{ev.isHRComplete?'Done':'Pending'}</span></div><div className="text-xs text-slate-500 flex justify-between mt-1"><span>Raw: {ev.rawTotal}</span><span className="font-bold text-indigo-600">Adj: {ev.zScoreAdjusted}</span></div></div>)})}</div>
                       </div>
                       <div className="col-span-8 bg-white rounded-xl shadow-sm p-6 overflow-y-auto">
