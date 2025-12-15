@@ -14,6 +14,9 @@ const PORT = 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, 'dist'))); // Serve frontend build
+
 const DATA_FILE = path.join(__dirname, 'data', 'evaluations.json');
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const EMPLOYEES_FILE = path.join(__dirname, 'data', 'employees.json');
@@ -147,6 +150,12 @@ app.post('/api/settings', (req, res) => {
     });
 });
 
+// Handle React routing, return all requests to React app
+app.get('*', (req, res) => {
+    // Check if request is for API, if so don't return index.html (already handled above but good safety)
+    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'API not found' });
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
