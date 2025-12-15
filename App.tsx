@@ -454,13 +454,19 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
 
     // Top Performers
     const topPerformers = useMemo(() => {
-        const depts = [Department.ENGINEERING, Department.SALES, Department.MARKETING, Department.HR];
+        const groups = {
+            'SALES': [Department.SALES],
+            'MANAGEMENT': [Department.MANAGEMENT],
+            'SUPPORT': Object.values(Department).filter(d => d !== Department.SALES && d !== Department.MANAGEMENT)
+        };
         const result: any = {};
-        depts.forEach(d => {
-            const deptEmps = employees.filter((e:Employee) => e.department === d).map((e:Employee) => e.id);
+        
+        (['SALES', 'MANAGEMENT', 'SUPPORT'] as const).forEach(key => {
+            const targetDepts = groups[key];
+            const deptEmps = employees.filter((e:Employee) => targetDepts.includes(e.department as any)).map((e:Employee) => e.id);
             const deptEvals = filtered.filter((e:Evaluation) => deptEmps.includes(e.employeeId));
             const sorted = deptEvals.sort((a:Evaluation, b:Evaluation) => b.totalScore - a.totalScore).slice(0, 3);
-            result[d] = sorted.map((ev:Evaluation) => ({
+            result[key] = sorted.map((ev:Evaluation) => ({
                 name: employees.find((x:Employee) => x.id === ev.employeeId)?.name,
                 score: ev.totalScore
             }));
@@ -683,7 +689,7 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
                          <div className="bg-white p-6 rounded-xl shadow-sm border h-80"><h4 className="font-bold mb-4 flex items-center gap-2"><TrendingUp size={16}/> 歷年平均分數趨勢</h4><ResponsiveContainer width="100%" height="100%"><LineChart data={yearlyTrend}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name"/><YAxis domain={[60, 100]}/><RechartsTooltip/><Line type="monotone" dataKey="score" stroke="#4f46e5" strokeWidth={3} dot={{r:6}}/></LineChart></ResponsiveContainer></div>
                          <div className="bg-white p-6 rounded-xl shadow-sm border h-80"><h4 className="font-bold mb-4 flex items-center gap-2"><Trophy size={16}/> 績效分布 ({viewYear})</h4><ResponsiveContainer width="100%" height="100%"><BarChart data={filtered.map(e=>({name:e.grade, val:1})).reduce((acc:any[], curr)=>{const exist = acc.find(x=>x.name===curr.name);if(exist) exist.count++; else acc.push({name:curr.name, count:1});return acc;}, [])}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name"/><YAxis allowDecimals={false}/><RechartsTooltip/><Bar dataKey="count" fill="#4f46e5" radius={[4,4,0,0]} barSize={40} /></BarChart></ResponsiveContainer></div>
                      </div>
-                     <div className="bg-white p-6 rounded-xl shadow-sm border"><h4 className="font-bold mb-6 flex items-center gap-2"><Activity size={16}/> 各部門 Top 3 優秀員工 ({viewYear} {viewTerm})</h4><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">{[Department.ENGINEERING, Department.SALES, Department.MARKETING, Department.HR].map(dept => (<div key={dept} className="bg-slate-50 p-4 rounded-xl hover:shadow-md transition-shadow"><h5 className="font-bold text-slate-500 text-sm mb-3 uppercase tracking-wider border-b pb-2">{dept}</h5><ul className="space-y-3">{topPerformers[dept]?.map((p:any, idx:number) => (<li key={idx} className="flex justify-between items-center bg-white p-2 rounded shadow-sm"><div className="flex items-center gap-2"><span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${idx===0?'bg-yellow-100 text-yellow-700':idx===1?'bg-slate-100 text-slate-600':'bg-orange-50 text-orange-800'}`}>{idx+1}</span><span className="text-sm font-medium">{p.name || 'Unknown'}</span></div><span className="text-sm font-bold text-indigo-600">{p.score}</span></li>))}{(!topPerformers[dept] || topPerformers[dept].length === 0) && <li className="text-xs text-slate-400 italic">尚無資料</li>}</ul></div>))}</div></div>
+                     <div className="bg-white p-6 rounded-xl shadow-sm border"><h4 className="font-bold mb-6 flex items-center gap-2"><Activity size={16}/> 各部門 Top 3 優秀員工 ({viewYear} {viewTerm})</h4><div className="grid grid-cols-1 md:grid-cols-3 gap-6">{(['SALES', 'MANAGEMENT', 'SUPPORT'] as const).map(category => (<div key={category} className="bg-slate-50 p-4 rounded-xl hover:shadow-md transition-shadow"><h5 className="font-bold text-slate-500 text-sm mb-3 uppercase tracking-wider border-b pb-2">{category === 'SALES' ? '業務部 (Sales)' : category === 'MANAGEMENT' ? '管理部 (Management)' : '後勤支援 (Support)'}</h5><ul className="space-y-3">{topPerformers[category]?.map((p:any, idx:number) => (<li key={idx} className="flex justify-between items-center bg-white p-2 rounded shadow-sm"><div className="flex items-center gap-2"><span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${idx===0?'bg-yellow-100 text-yellow-700':idx===1?'bg-slate-100 text-slate-600':'bg-orange-50 text-orange-800'}`}>{idx+1}</span><span className="text-sm font-medium">{p.name || 'Unknown'}</span></div><span className="text-sm font-bold text-indigo-600">{p.score}</span></li>))}{(!topPerformers[category] || topPerformers[category].length === 0) && <li className="text-xs text-slate-400 italic">尚無資料</li>}</ul></div>))}</div></div>
                  </div>
              )}
 
