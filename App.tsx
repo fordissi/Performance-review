@@ -100,11 +100,12 @@ const LoginView = ({ onLogin, users }: { onLogin: (u: User) => void, users: User
                                 <p className="text-sm text-slate-500">自動生成考核評語、分析自評與主管評分的認知落差，並提供面談引導建議。</p>
                             </div>
                         </div>
+
                         <div className="flex gap-4">
                             <div className="bg-white p-3 rounded-lg shadow-sm h-fit"><Calculator className="text-green-600" size={24}/></div>
                             <div>
-                                <h3 className="font-bold text-lg">Z-Score 科學化評分</h3>
-                                <p className="text-sm text-slate-500">自動標準化不同主管的評分寬嚴度，確保跨部門考核的公平性。</p>
+                                <h3 className="font-bold text-lg">Z-Score 標準化與部門分群</h3>
+                                <p className="text-sm text-slate-500">自動針對 Sales/Mgmt/Support 三大職能群組進行 Z-Score 校準，確保跨部門考核公平性。</p>
                             </div>
                         </div>
                         <div className="flex gap-4">
@@ -112,10 +113,10 @@ const LoginView = ({ onLogin, users }: { onLogin: (u: User) => void, users: User
                             <div>
                                 <h3 className="font-bold text-lg">角色權限分流</h3>
                                 <ul className="text-sm text-slate-500 list-disc list-inside mt-1 space-y-1">
-                                    <li><strong>GM</strong>: 全局戰情儀表板</li>
-                                    <li><strong>HR</strong>: 系統參數與人員管理</li>
-                                    <li><strong>Manager</strong>: 團隊考核與 AI 分析</li>
-                                    <li><strong>Employee</strong>: 自評與歷史查閱</li>
+                                    <li><strong>GM</strong>: 全局戰情儀表板 (Sales/Mgmt/SupportTop3 分析)</li>
+                                    <li><strong>HR</strong>: 系統參數、人員管理與動態考核標準設定</li>
+                                    <li><strong>Manager</strong>: 團隊考核與 AI 面談引導</li>
+                                    <li><strong>Employee</strong>: 線上自評與歷史績效查閱</li>
                                 </ul>
                             </div>
                         </div>
