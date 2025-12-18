@@ -31,7 +31,7 @@ export interface Employee {
   name: string;
   role: string;
   department: Department;
-  managerId: string;
+  managerIds: string[]; // Changed from managerId for Multi-Manager Support
   isManager: boolean; // New Flag
   avatar: string;
 }

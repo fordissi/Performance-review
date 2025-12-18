@@ -196,7 +196,7 @@ const Sidebar = ({ user, onLogout, isOpen, onClose, viewMode, setViewMode }: { u
 
 // Manager View
 const ManagerView = ({ user, employees, evaluations, settings, onSave }: any) => {
-    const myEmployees = employees.filter((e: Employee) => e.managerId === user.id);
+    const myEmployees = employees.filter((e: Employee) => e.managerIds && e.managerIds.includes(user.id));
     const [selectedEmpId, setSelectedEmpId] = useState(myEmployees[0]?.id || '');
     const [scores, setScores] = useState<ScoreDetails>({});
     const [feedback, setFeedback] = useState('');
@@ -547,7 +547,7 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
     // Employee & User Mgmt Handlers
     const handleAddEmployee = () => {
         setEditingEmp(null);
-        setEmpForm({id: `E${Math.floor(Math.random()*1000)}`, name:'', role:'', department: Department.ENGINEERING, managerId:'', isManager: false});
+        setEmpForm({id: `E${Math.floor(Math.random()*1000)}`, name:'', role:'', department: Department.ENGINEERING, managerIds:[], isManager: false});
         setShowEmpModal(true);
     };
     const handleEditEmployee = (e: Employee) => {
@@ -735,7 +735,7 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
                                     <td className="p-4 font-bold">{emp.name} {emp.isManager && '⭐'}</td>
                                     <td className="p-4 text-sm text-slate-600">{emp.role}</td>
                                     <td className="p-4"><span className="px-2 py-1 text-xs rounded-full bg-slate-100">{emp.department}</span></td>
-                                    <td className="p-4 text-sm text-slate-500">{emp.managerId}</td>
+                                    <td className="p-4 text-sm text-slate-500">{emp.managerIds?.join(', ')}</td>
                                     <td className="p-4">{users.find((u:User)=>u.id===emp.id) ? <span className="text-green-600 flex items-center gap-1"><CheckCircle size={14}/> Active</span> : <span className="text-slate-400 text-xs">No Account</span>}</td>
                                     <td className="p-4 text-right flex justify-end gap-2">
                                         <button onClick={()=>handleEditEmployee(emp)} className="p-1 text-slate-400 hover:text-indigo-600"><Edit size={16}/></button>
@@ -789,7 +789,7 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
                                 <div><label className="text-xs font-bold">Role Title</label><input value={empForm.role} onChange={e=>setEmpForm({...empForm, role:e.target.value})} className="w-full border p-2 rounded"/></div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div><label className="text-xs font-bold">Manager</label><select value={empForm.managerId} onChange={e=>setEmpForm({...empForm, managerId:e.target.value})} className="w-full border p-2 rounded"><option value="">Select Manager</option>{employees.filter(e=>e.isManager).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}<option value="U_GM">General Manager</option></select></div>
+                                <div><label className="text-xs font-bold">Manager IDs (Comma separated)</label><input value={empForm.managerIds?.join(',') || ''} onChange={e=>setEmpForm({...empForm, managerIds: e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})} className="w-full border p-2 rounded" placeholder="E.g. M001, M002"/></div>
                                 <div className="flex items-center pt-6"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={empForm.isManager} onChange={e=>setEmpForm({...empForm, isManager:e.target.checked})} /> Is Manager?</label></div>
                             </div>
                             {!editingEmp && <p className="text-xs text-slate-500 bg-yellow-50 p-2 rounded">New employees will automatically get a User Account (username=ID, password=password).</p>}
@@ -807,7 +807,7 @@ const HRView = ({ user, employees, users, evaluations, settings, onUpdateSetting
 };
 
 // Employee View (Unified)
-const EmployeeView = ({ user, employees, evaluations, settings, onSave }: any) => {
+const EmployeeView = ({ user, employees, evaluations, settings, onSave, onBatchSave }: any) => {
     // Try to find employee by ID first (safer), then Name
     const emp = employees.find((e:Employee) => e.id === user.id) || employees.find((e:Employee) => e.name === user.name);
     
@@ -853,21 +853,40 @@ const EmployeeView = ({ user, employees, evaluations, settings, onSave }: any) =
     const handleSaveSelf = () => {
         if (!confirm('確定提交自評嗎？提交後主管將可看到您完成的狀態。')) return;
         
-        const newEval: Evaluation = ev ? { ...ev, selfScores, selfFeedback, isSelfComplete: true } : {
-            employeeId: emp.id,
-            managerId: emp.managerId, // Critical: Must have manager
-            year: viewYear,
-            term: viewTerm,
-            scores: {}, // Manager scores empty if new
-            selfScores,
-            selfFeedback,
-            isSelfComplete: true,
-            isManagerComplete: false,
-            isHRComplete: false,
-            isZScoreCalculated: false,
-            rawTotal: 0, zScoreAdjusted: 0, attendanceBonus: 0, overallAdjustment: 0, rewardsPunishments: 0, totalScore: 0, grade: '', feedback: ''
-        };
-        onSave(newEval);
+        const targetManagers = emp.managerIds && emp.managerIds.length > 0 ? emp.managerIds : [];
+        if (targetManagers.length === 0) {
+            alert('您尚未分配主管，無法提交自評。請聯繫 HR。');
+            return;
+        }
+
+        const newEvals: Evaluation[] = [];
+        
+        targetManagers.forEach((mId: string) => {
+             const existing = evaluations.find((e:Evaluation) => e.employeeId === emp.id && e.year === viewYear && e.term === viewTerm && e.managerId === mId);
+             const evalObj: Evaluation = existing ? { ...existing, selfScores, selfFeedback, isSelfComplete: true } : {
+                employeeId: emp.id,
+                managerId: mId,
+                year: viewYear,
+                term: viewTerm,
+                scores: {}, 
+                selfScores,
+                selfFeedback,
+                isSelfComplete: true,
+                isManagerComplete: false,
+                isHRComplete: false,
+                isZScoreCalculated: false,
+                rawTotal: 0, zScoreAdjusted: 0, attendanceBonus: 0, overallAdjustment: 0, rewardsPunishments: 0, totalScore: 0, grade: '', feedback: ''
+            };
+            newEvals.push(evalObj);
+        });
+
+        // Use batch save if available, otherwise just save the first one (fallback, though logic suggests we need batch)
+        if (onBatchSave) {
+            onBatchSave(newEvals);
+        } else {
+             // Fallback for safety (should not happen with updated App render)
+             onSave(newEvals[0]); 
+        }
         setIsEditing(false);
         alert('自評已提交！');
     };
@@ -1101,7 +1120,7 @@ const App = () => {
             <main className="flex-1 p-4 lg:p-8 overflow-y-auto mt-16 lg:mt-0">
                 {currentView === 'hr_dashboard' && <HRView user={user} employees={employees} users={users} evaluations={evaluations} settings={settings} onUpdateSettings={handleUpdateSettings} onSave={handleSaveEvals} onBatchSave={handleBatchSaveEvals} onSaveUsers={handleSaveUsers} onSaveEmployees={handleSaveEmployees} />}
                 {currentView === 'manager_eval' && <ManagerView user={user} employees={employees} evaluations={evaluations} settings={settings} onSave={handleSaveEvals} />}
-                {currentView === 'my_eval' && <EmployeeView user={user} employees={employees} evaluations={evaluations} settings={settings} onSave={handleSaveEvals} />}
+                {currentView === 'my_eval' && <EmployeeView user={user} employees={employees} evaluations={evaluations} settings={settings} onSave={handleSaveEvals} onBatchSave={handleBatchSaveEvals} />}
                 {currentView === 'change_password' && <ChangePasswordView onSave={handleChangePassword} onCancel={() => {
                      // Cancel returns to default view
                      if(user.role === Role.HR || user.role === Role.GM) setCurrentView('hr_dashboard');
